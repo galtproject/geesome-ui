@@ -5,12 +5,9 @@ coverage
 .DS_Store
 *.log
 *.key
-test/resources
-app/modules/socNetImport/config
-.jsipfs-test
-docs
 *.sqlite
-.docker-data
-frontend/.parcel-cache
 *.zip
 .env
+.parcel-cache
+parcel-bundle-reports
+dist
