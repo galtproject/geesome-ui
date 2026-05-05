@@ -128,6 +128,18 @@ export default {
         return geesomeClient.saveDataByUrl(url, params).catch(this.onError);
       },
 
+      getUserPinAccounts() {
+        return geesomeClient.getRequest('user/pin/user-accounts').catch(this.onError);
+      },
+
+      createPinAccount(accountData) {
+        return geesomeClient.postRequest('user/pin/create-account', accountData).catch(this.onError);
+      },
+
+      updatePinAccount(accountId, accountData) {
+        return geesomeClient.postRequest(`user/pin/update-account/${accountId}`, accountData).catch(this.onError);
+      },
+
       onProcess(process) {
         if(!process.percent) {
           return;

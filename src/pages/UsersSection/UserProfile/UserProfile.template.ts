@@ -49,6 +49,8 @@ module.exports = `
             
 			<content-bots></content-bots>
 
+            <pin-services></pin-services>
+
             <api-keys></api-keys>
           </div>
         </div>
