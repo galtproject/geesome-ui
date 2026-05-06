@@ -63,11 +63,51 @@ module.exports = `
       <md-table-cell>{{item.endpoint || 'Default Pinata endpoint'}}</md-table-cell>
       <md-table-cell>{{item.isEncrypted ? 'Yes' : 'No'}}</md-table-cell>
       <md-table-cell>
-        <md-button class="md-accent md-icon-button" @click="editPinAccount(item)">
+        <md-button class="md-accent md-icon-button" @click="editPinAccount(item)" :aria-label="'Edit pin service ' + item.name">
           <md-icon>edit</md-icon>
+        </md-button>
+        <md-button class="md-accent md-icon-button" @click="deletePinAccount(item)" :disabled="deletingId === item.id" :aria-label="'Delete pin service ' + item.name">
+          <md-icon>delete</md-icon>
         </md-button>
       </md-table-cell>
     </md-table-row>
   </md-table>
+
+  <md-card style="margin-top: 24px;">
+    <md-card-header>
+      <div class="md-title">Pin uploaded content</div>
+    </md-card-header>
+
+    <md-card-content>
+      <md-field>
+        <label>Pin service</label>
+        <md-select v-model="pinAccountName" :disabled="!pinAccounts.length">
+          <md-option v-for="item in pinAccounts" :key="item.id" :value="item.name">{{item.name}} ({{item.service | prettyName}})</md-option>
+        </md-select>
+      </md-field>
+
+      <upload-content @uploaded="handleUploaded" :hide-methods="['enter_text', 'upload_link', 'choose_uploaded']"></upload-content>
+
+      <md-field>
+        <label>Storage id</label>
+        <md-input v-model="pinStorageId" placeholder="CID from an uploaded Geesome file"></md-input>
+      </md-field>
+
+      <div v-if="uploadedContent && uploadedContent.id">
+        Uploaded content #{{uploadedContent.id}}
+      </div>
+
+      <div v-if="lastPinResult">
+        Last pin status: {{lastPinResult.status || 'ok'}} {{lastPinResult.statusText || ''}}
+      </div>
+    </md-card-content>
+
+    <md-card-actions>
+      <md-button class="md-raised md-accent" @click="pinUploadedContent" :disabled="isPinDisabled" aria-label="Pin uploaded content">
+        <md-icon>cloud_upload</md-icon>
+        Pin content
+      </md-button>
+    </md-card-actions>
+  </md-card>
 </div>
 `;

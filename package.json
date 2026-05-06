@@ -7,7 +7,10 @@
     "build": "PYTHON=python yarn --no-optional && rm -rf ./dist && node --max-old-space-size=8192 ./node_modules/.bin/parcel build ./index.html --no-content-hash --no-optimize --dist-dir ./dist --reporter @parcel/reporter-bundle-analyzer && node ./run-terser.js && cp package.json ./dist/",
     "build-and-publish": "npm run build && npm publish ./dist --access public",
     "build-new-ver": "touch dist/package.json > /dev/null 2>&1; DIST_VERSION=$(node -p -e \"require('./dist/package.json').version\"); CUR_VERSION=$(node -p -e \"require('./package.json').version\"); if [ \"$DIST_VERSION\" != \"$CUR_VERSION\" ]; then npm run build; fi",
-    "serve": "./node_modules/.bin/http-server ./dist"
+    "serve": "./node_modules/.bin/http-server ./dist",
+    "test:e2e": "node tests/e2e/run-e2e.js",
+    "test:e2e:screens": "node tests/e2e/run-e2e.js --screens",
+    "test:e2e:screens:debug": "node tests/e2e/run-e2e.js --screens --debug"
   },
   "engines": {
     "node": ">= 4.0.0",
@@ -65,6 +68,7 @@
     "@babel/preset-typescript": "^7.15.0",
     "@types/chai": "^4.3.20",
     "@types/mocha": "^10.0.9",
+    "@playwright/test": "1.59.1",
     "@types/node": "^8.10.17",
     "assert": "^2.0.0",
     "autoprefixer": "^10.3.6",

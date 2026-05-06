@@ -70,7 +70,9 @@ export default {
       this.$emit('update:content-id', contentObj.id);
       this.$emit('uploaded', {
         method: mode || this.mode,
-        id: contentObj.id
+        id: contentObj.id,
+        storageId: contentObj.storageId,
+        content: contentObj
       });
       this.setMode(null);
       this.localValue = '';
