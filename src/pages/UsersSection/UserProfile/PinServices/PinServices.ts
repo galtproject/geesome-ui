@@ -34,6 +34,10 @@ function toAccountPayload(form) {
   return payload;
 }
 
+function getAccountName(account) {
+  return account ? account.name : '';
+}
+
 export default {
   template: require('./PinServices.template'),
   components: {},
@@ -47,6 +51,9 @@ export default {
       try {
         const response = await this.$geesome.getUserPinAccounts();
         this.pinAccounts = response.list || [];
+        if (!this.pinAccountName && this.pinAccounts.length) {
+          this.pinAccountName = getAccountName(this.pinAccounts[0]);
+        }
       } finally {
         this.loading = false;
       }
@@ -89,21 +96,84 @@ export default {
         });
       }
       this.saving = false;
+    },
+    async deletePinAccount(account) {
+      if (!confirm(`Delete pin service "${account.name}"?`)) {
+        return;
+      }
+      this.deletingId = account.id;
+      try {
+        await this.$geesome.deletePinAccount(account.id);
+        this.$notify({
+          type: 'success',
+          title: 'Pin service deleted'
+        });
+        if (this.pinAccountName === account.name) {
+          this.pinAccountName = '';
+        }
+        await this.getPinAccounts();
+      } catch (e) {
+        this.$notify({
+          type: 'error',
+          title: e.message || e.error || 'Pin service delete failed'
+        });
+      }
+      this.deletingId = null;
+    },
+    handleUploaded(uploaded) {
+      this.pinStorageId = uploaded.storageId || '';
+      this.uploadedContent = uploaded;
+      if (this.pinStorageId && this.pinAccounts.length && !this.pinAccountName) {
+        this.pinAccountName = getAccountName(this.pinAccounts[0]);
+      }
+    },
+    async pinUploadedContent() {
+      if (this.isPinDisabled) {
+        return;
+      }
+      this.pinning = true;
+      this.lastPinResult = null;
+      try {
+        const response = await this.$geesome.pinContentByUserAccount(this.pinAccountName, this.pinStorageId, {
+          source: 'geesome-ui',
+          contentDbId: this.uploadedContent ? this.uploadedContent.id : undefined
+        });
+        this.lastPinResult = response;
+        this.$notify({
+          type: 'success',
+          title: 'Content pinned'
+        });
+      } catch (e) {
+        this.$notify({
+          type: 'error',
+          title: e.message || e.error || 'Pin request failed'
+        });
+      }
+      this.pinning = false;
     }
   },
   watch: {},
   computed: {
     isSaveDisabled() {
       return this.saving || !this.form.name || !this.form.service || !this.form.apiKey || (!this.form.id && !this.form.secretApiKey);
+    },
+    isPinDisabled() {
+      return this.pinning || !this.pinAccountName || !this.pinStorageId;
     }
   },
   data() {
     return {
       loading: false,
       saving: false,
+      pinning: false,
+      deletingId: null,
       isFormVisible: false,
       pinAccounts: [],
-      form: emptyAccount()
+      form: emptyAccount(),
+      pinAccountName: '',
+      pinStorageId: '',
+      uploadedContent: null,
+      lastPinResult: null
     };
   }
 }

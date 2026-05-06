@@ -11,3 +11,6 @@ coverage
 .parcel-cache
 parcel-bundle-reports
 dist
+.agent/
+test-results/
+playwright-report/

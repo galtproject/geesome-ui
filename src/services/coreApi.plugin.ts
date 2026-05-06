@@ -140,6 +140,17 @@ export default {
         return geesomeClient.postRequest(`user/pin/update-account/${accountId}`, accountData).catch(this.onError);
       },
 
+      deletePinAccount(accountId) {
+        return geesomeClient.postRequest(`user/pin/delete-account/${accountId}`).catch(this.onError);
+      },
+
+      pinContentByUserAccount(accountName, storageId, options: any = {}) {
+        return geesomeClient.postRequest(
+          `user/pin/account/${encodeURIComponent(accountName)}/pin-content/${encodeURIComponent(storageId)}/by-user`,
+          options
+        ).catch(this.onError);
+      },
+
       onProcess(process) {
         if(!process.percent) {
           return;
