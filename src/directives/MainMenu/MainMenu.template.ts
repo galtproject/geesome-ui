@@ -31,6 +31,11 @@ module.exports = `
       <span class="md-list-item-text" v-locale="localeKey + '.boot_nodes'"></span>
     </md-list-item>
 
+    <md-list-item :to="{name: 'storage-space'}" v-if="haveAdminReadPermission">
+      <md-icon class="fas fa-chart-pie"></md-icon>
+      <span class="md-list-item-text" v-locale="localeKey + '.storage_space'"></span>
+    </md-list-item>
+
     <md-list-item :to="{name: 'admined-groups'}" v-if="user">
       <md-icon class="fas fa-users-cog"></md-icon>
       <span class="md-list-item-text" v-locale="localeKey + '.administration_groups'"></span>

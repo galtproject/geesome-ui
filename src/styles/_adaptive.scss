@@ -66,6 +66,21 @@
     width: auto;
   }
 
+  .storage-space-page {
+    .storage-space-overview {
+      grid-template-columns: 1fr;
+    }
+
+    .storage-space-controls {
+      display: block;
+    }
+
+    .storage-space-limit-field {
+      width: 100%;
+      margin-top: 0;
+    }
+  }
+
   .wide-content {
     width: 100%;
   }

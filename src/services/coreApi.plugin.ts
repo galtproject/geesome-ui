@@ -151,6 +151,26 @@ export default {
         ).catch(this.onError);
       },
 
+      adminGetStorageSpaceOverview() {
+        return geesomeClient.getRequest('admin/storage-space/overview').catch(this.onError);
+      },
+
+      adminGetStorageSpaceTypeBreakdown(listParams: any = {}) {
+        return geesomeClient.getRequest('admin/storage-space/type-breakdown', {params: listParams}).catch(this.onError);
+      },
+
+      adminGetStorageSpaceTopContents(listParams: any = {}) {
+        return geesomeClient.getRequest('admin/storage-space/top-contents', {params: listParams}).catch(this.onError);
+      },
+
+      adminGetStorageSpaceTopFileCatalogItems(listParams: any = {}) {
+        return geesomeClient.getRequest('admin/storage-space/top-file-catalog-items', {params: listParams}).catch(this.onError);
+      },
+
+      adminGetStorageSpaceTopGroups(listParams: any = {}) {
+        return geesomeClient.getRequest('admin/storage-space/top-groups', {params: listParams}).catch(this.onError);
+      },
+
       onProcess(process) {
         if(!process.percent) {
           return;

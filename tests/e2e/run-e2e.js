@@ -52,7 +52,10 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const port = await findFreePort(Number(process.env.PLAYWRIGHT_TEST_FRONTEND_PORT || 4384));
   const playwrightBin = path.join(repoRoot, 'node_modules/.bin/playwright');
-  const specArgs = args.screens ? ['tests/e2e/pin-services.spec.js'] : [];
+  const specArgs = args.screens ? [
+    'tests/e2e/pin-services.spec.js',
+    'tests/e2e/storage-space.spec.js'
+  ] : [];
 
   console.log(`[geesome-ui:e2e] frontend port ${port}`);
   if (args.debug) {

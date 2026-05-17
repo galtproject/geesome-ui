@@ -9,6 +9,7 @@
       "chat": "Chat",
       "file_explorer": "Files explorer",
       "boot_nodes": "Boot Nodes",
+      "storage_space": "Storage space",
       "administration_groups": "Administrate groups",
       "followed_groups": "Followed groups"
     }
