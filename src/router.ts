@@ -33,6 +33,7 @@ import NewUserRegister from "./pages/UsersSection/NewUser/NewUserRegister/NewUse
 import NewUserInvite from "./pages/UsersSection/NewUser/NewUserInvite/NewUserInvite";
 import JoinByInvite from "./pages/UsersSection/JoinByInvite/JoinByInvite";
 import EditPassword from "./pages/UsersSection/UserProfile/EditPassword/EditPassword";
+import StorageSpacePage from "./pages/StorageSpacePage/StorageSpacePage";
 
 Vue.use(Router);
 
@@ -103,6 +104,11 @@ export default new Router({
       path: '/boot-nodes',
       name: 'boot-nodes',
       component: BootNodesPage
+    },
+    {
+      path: '/storage-space',
+      name: 'storage-space',
+      component: StorageSpacePage
     },
     {
       path: '/new-user',

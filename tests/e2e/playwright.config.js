@@ -22,7 +22,7 @@ module.exports = defineConfig({
     }
   },
   webServer: {
-    command: `npx parcel tests/e2e/pin-services.fixture.html --host 127.0.0.1 --port ${frontendPort} --dist-dir .agent/tasks/pin-services-e2e/dist --cache-dir .agent/tasks/pin-services-e2e/parcel-cache`,
+    command: `npx parcel tests/e2e/operator.fixture.html --host 127.0.0.1 --port ${frontendPort} --dist-dir .agent/tasks/operator-e2e/dist --cache-dir .agent/tasks/operator-e2e/parcel-cache`,
     port: frontendPort,
     reuseExistingServer: false,
     cwd: repoRoot,
