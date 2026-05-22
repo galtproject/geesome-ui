@@ -35,8 +35,12 @@ test('storage space UI summarizes usage and switches drilldown tables (dual view
   await expect(page.getByText('4.5 KB')).toBeVisible();
   await expect(page.getByText('poster.png')).toBeVisible();
   await saveShot(page, 'storage-space-mobile.png');
+  await page.locator('.md-tabs-navigation').getByText('Availability').click();
+  await expect(page.getByText('bafy-availability-poster')).toBeVisible();
+  await saveShot(page, 'storage-space-availability-mobile.png');
 
   await page.setViewportSize(DESKTOP_VIEWPORT);
+  await page.locator('.md-tabs-navigation').getByText('Largest files').click();
   await expect(page.getByText('Largest files')).toBeVisible();
   await expect(page.getByText('bafy-content-poster')).toBeVisible();
   await saveShot(page, 'storage-space-desktop.png');
@@ -51,9 +55,31 @@ test('storage space UI summarizes usage and switches drilldown tables (dual view
   await page.locator('.md-tabs-navigation').getByText('File types').click();
   await expect(page.getByText('image/png / png')).toBeVisible();
 
+  await page.locator('.md-tabs-navigation').getByText('Availability').click();
+  await expect(page.getByText('bafy-availability-poster')).toBeVisible();
+  await expect(page.getByText('7')).toBeVisible();
+  await expect.poll(async () => (await calls(page, 'adminInspectStorageSpaceAvailabilityNetworkSignals')).length).toBe(0);
+  await page.getByRole('button', {name: 'Inspect visible availability network'}).click();
+  await expect(page.getByText('2 providers')).toBeVisible();
+  await expect(page.getByText('peer-a')).toBeVisible();
+  await expect(page.getByText('stat timeout')).toBeVisible();
+  await saveShot(page, 'storage-space-availability-desktop.png');
+
   await page.getByRole('button', {name: 'Refresh storage analysis'}).click();
   await expect.poll(async () => (await calls(page, 'adminGetStorageSpaceOverview')).length).toBe(2);
 
   const topContentCalls = await calls(page, 'adminGetStorageSpaceTopContents');
   expect(topContentCalls[0].listParams).toMatchObject({limit: 20, offset: 0});
+  const availabilityCalls = await calls(page, 'adminGetStorageSpaceAvailabilitySignals');
+  expect(availabilityCalls[0].listParams).toMatchObject({limit: 20, offset: 0});
+  const networkCalls = await calls(page, 'adminInspectStorageSpaceAvailabilityNetworkSignals');
+  expect(networkCalls[0].listParams).toMatchObject({
+    limit: 20,
+    offset: 0,
+    providerLimit: 10,
+    providerAddressLimit: 2,
+    providerTimeoutMs: 5000,
+    statTimeoutMs: 5000,
+    statWithLocal: false
+  });
 });

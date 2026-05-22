@@ -62,16 +62,19 @@ module.exports = `
         <md-tab id="catalog" md-label="Catalog files"></md-tab>
         <md-tab id="groups" md-label="Groups"></md-tab>
         <md-tab id="types" md-label="File types"></md-tab>
+        <md-tab id="availability" md-label="Availability"></md-tab>
       </md-tabs>
 
-      <md-field class="storage-space-limit-field">
-        <label>Rows</label>
-        <md-select v-model="pageLimit" :disabled="loading">
-          <md-option :value="10">10</md-option>
-          <md-option :value="20">20</md-option>
-          <md-option :value="50">50</md-option>
-        </md-select>
-      </md-field>
+      <div class="storage-space-actions">
+        <md-field class="storage-space-limit-field">
+          <label>Rows</label>
+          <md-select v-model="pageLimit" :disabled="loading">
+            <md-option :value="10">10</md-option>
+            <md-option :value="20">20</md-option>
+            <md-option :value="50">50</md-option>
+          </md-select>
+        </md-field>
+      </div>
     </md-card-content>
 
     <md-card-content style="padding-top: 0;" v-if="activeTable === 'contents'">
@@ -166,6 +169,65 @@ module.exports = `
               <span :style="{width: getUsageWidth(item.logicalBytes, getLogicalTotal())}"></span>
             </div>
             <small>{{getPercentText(item.logicalBytes, getLogicalTotal())}}</small>
+          </md-table-cell>
+        </md-table-row>
+      </md-table>
+    </md-card-content>
+
+    <md-card-content style="padding-top: 0;" v-if="activeTable === 'availability'">
+      <div class="storage-space-section-actions">
+        <md-button class="md-primary storage-space-network-button" @click="inspectAvailabilitySignals()" :disabled="loading || inspectingAvailability" aria-label="Inspect visible availability network">
+          <md-icon class="fas fa-search"></md-icon>
+          <span>Inspect visible</span>
+          <md-tooltip>Inspect network</md-tooltip>
+        </md-button>
+      </div>
+
+      <md-progress-bar md-mode="indeterminate" v-if="inspectingAvailability"></md-progress-bar>
+      <div class="storage-space-error" v-if="availabilityErrorMessage">{{availabilityErrorMessage}}</div>
+
+      <md-table>
+        <md-table-row>
+          <md-table-head>Storage ID</md-table-head>
+          <md-table-head>Stored peers</md-table-head>
+          <md-table-head>Pins</md-table-head>
+          <md-table-head>Refs</md-table-head>
+          <md-table-head>Providers</md-table-head>
+          <md-table-head>Retrieval</md-table-head>
+          <md-table-head></md-table-head>
+        </md-table-row>
+
+        <md-table-row v-for="item in availabilitySignals" :key="item.storageId">
+          <md-table-cell>
+            <pretty-hex :hex="item.storageId"></pretty-hex>
+          </md-table-cell>
+          <md-table-cell>{{item.maxPeerCount || 0}}</md-table-cell>
+          <md-table-cell>{{getAvailabilityPinsText(item)}}</md-table-cell>
+          <md-table-cell>{{getAvailabilityRefsText(item)}}</md-table-cell>
+          <md-table-cell>
+            <template v-if="availabilityInspectionByStorageId[item.storageId]">
+              <span v-if="availabilityInspectionByStorageId[item.storageId].providerLookupOk">
+                {{getProviderCountText(availabilityInspectionByStorageId[item.storageId])}}
+              </span>
+              <span v-else>{{availabilityInspectionByStorageId[item.storageId].providerLookupErrorMessage || 'lookup failed'}}</span>
+              <small class="storage-space-secondary-text">{{getProviderSampleText(availabilityInspectionByStorageId[item.storageId])}}</small>
+            </template>
+            <span v-else>-</span>
+          </md-table-cell>
+          <md-table-cell>
+            <template v-if="availabilityInspectionByStorageId[item.storageId]">
+              <span>{{getRetrievalText(availabilityInspectionByStorageId[item.storageId])}}</span>
+              <small class="storage-space-secondary-text" v-if="availabilityInspectionByStorageId[item.storageId].retrievalStatOk">
+                {{availabilityInspectionByStorageId[item.storageId].retrievalMeasuredBytes | prettySize}}
+              </small>
+            </template>
+            <span v-else>-</span>
+          </md-table-cell>
+          <md-table-cell>
+            <md-button class="md-icon-button md-primary" @click="inspectAvailabilitySignals(item.storageId)" :disabled="inspectingAvailability" :aria-label="'Inspect ' + item.storageId">
+              <md-icon class="fas fa-search"></md-icon>
+              <md-tooltip>Inspect</md-tooltip>
+            </md-button>
           </md-table-cell>
         </md-table-row>
       </md-table>

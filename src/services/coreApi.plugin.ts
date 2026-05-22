@@ -171,6 +171,14 @@ export default {
         return geesomeClient.getRequest('admin/storage-space/top-groups', {params: listParams}).catch(this.onError);
       },
 
+      adminGetStorageSpaceAvailabilitySignals(listParams: any = {}) {
+        return geesomeClient.getRequest('admin/storage-space/availability-signals', {params: listParams}).catch(this.onError);
+      },
+
+      adminInspectStorageSpaceAvailabilityNetworkSignals(listParams: any = {}) {
+        return geesomeClient.getRequest('admin/storage-space/availability-network-inspection', {params: listParams}).catch(this.onError);
+      },
+
       onProcess(process) {
         if(!process.percent) {
           return;

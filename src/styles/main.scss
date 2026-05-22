@@ -546,6 +546,19 @@ a.icon-link {
     }
   }
 
+  .storage-space-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+
+  .storage-space-section-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 8px;
+  }
+
   .storage-space-limit-field {
     width: 120px;
     flex: 0 0 120px;
@@ -568,6 +581,17 @@ a.icon-link {
   .storage-space-error {
     color: #ff8a80;
     padding: 10px 0;
+  }
+
+  .storage-space-secondary-text {
+    display: block;
+    color: #9e9e9e;
+    font-size: 12px;
+    line-height: 1.4;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .md-table {
