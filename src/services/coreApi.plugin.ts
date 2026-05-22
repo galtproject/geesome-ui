@@ -179,6 +179,14 @@ export default {
         return geesomeClient.getRequest('admin/storage-space/availability-network-inspection', {params: listParams}).catch(this.onError);
       },
 
+      adminGetStorageSpaceAvailabilityNetworkSamples(listParams: any = {}) {
+        return geesomeClient.getRequest('admin/storage-space/availability-network-samples', {params: listParams}).catch(this.onError);
+      },
+
+      adminRefreshStorageSpaceAvailabilityNetworkSamples(listParams: any = {}) {
+        return geesomeClient.postRequest('admin/storage-space/availability-network-samples/refresh', listParams).catch(this.onError);
+      },
+
       onProcess(process) {
         if(!process.percent) {
           return;

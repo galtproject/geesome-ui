@@ -95,6 +95,23 @@ const availabilityInspection = [
     retrievalErrorMessage: 'stat timeout'
   }
 ];
+const availabilitySamples = [
+  {
+    id: 101,
+    userId: 7,
+    storageId: 'bafy-availability-poster',
+    providerLookupOk: true,
+    providersCount: 3,
+    providersTruncated: false,
+    providerLookupDurationMs: 110,
+    providers: [{id: 'peer-saved', multiaddrs: ['/ip4/127.0.0.10/tcp/4001'], protocols: [], source: 'kubo-routing'}],
+    retrievalStatOk: true,
+    retrievalStatDurationMs: 75,
+    retrievalType: 'file',
+    retrievalMeasuredBytes: 2048,
+    sampledAt: '2026-05-22T08:30:00.000Z'
+  }
+];
 
 Vue.use(VueMaterial);
 Vue.component('upload-content', UploadContent);
@@ -158,12 +175,32 @@ Vue.prototype.$geesome = {
     calls.push({type: 'adminGetStorageSpaceAvailabilitySignals', listParams});
     return availabilitySignals;
   },
+  async adminGetStorageSpaceAvailabilityNetworkSamples(listParams) {
+    calls.push({type: 'adminGetStorageSpaceAvailabilityNetworkSamples', listParams});
+    return availabilitySamples;
+  },
   async adminInspectStorageSpaceAvailabilityNetworkSignals(listParams) {
     calls.push({type: 'adminInspectStorageSpaceAvailabilityNetworkSignals', listParams});
     if (listParams && listParams.storageId) {
       return availabilityInspection.filter(item => item.storageId === listParams.storageId);
     }
     return availabilityInspection;
+  },
+  async adminRefreshStorageSpaceAvailabilityNetworkSamples(listParams) {
+    calls.push({type: 'adminRefreshStorageSpaceAvailabilityNetworkSamples', listParams});
+    const rows = listParams && listParams.storageId
+      ? availabilityInspection.filter(item => item.storageId === listParams.storageId)
+      : availabilityInspection;
+    return {
+      sampled: rows.length,
+      durationMs: 160,
+      rows: rows.map((row, index) => ({
+        ...row,
+        id: 201 + index,
+        userId: 7,
+        sampledAt: '2026-05-22T09:00:00.000Z'
+      }))
+    };
   }
 };
 

@@ -27,7 +27,8 @@ export default {
           this.$geesome.adminGetStorageSpaceTopContents(listParams),
           this.$geesome.adminGetStorageSpaceTopFileCatalogItems(listParams),
           this.$geesome.adminGetStorageSpaceTopGroups(listParams),
-          this.$geesome.adminGetStorageSpaceAvailabilitySignals(listParams)
+          this.$geesome.adminGetStorageSpaceAvailabilitySignals(listParams),
+          this.$geesome.adminGetStorageSpaceAvailabilityNetworkSamples(listParams)
         ]);
 
         this.overview = results[0] || {};
@@ -36,6 +37,7 @@ export default {
         this.topFileCatalogItems = results[3] || [];
         this.topGroups = results[4] || [];
         this.availabilitySignals = results[5] || [];
+        this.availabilitySampleRows = results[6] || [];
       } catch (e) {
         this.errorMessage = getErrorMessage(e);
       }
@@ -48,8 +50,10 @@ export default {
 
       try {
         const listParams = getAvailabilityInspectionParams(this.pageLimit, storageId);
-        const rows = await this.$geesome.adminInspectStorageSpaceAvailabilityNetworkSignals(listParams);
+        const result = await this.$geesome.adminRefreshStorageSpaceAvailabilityNetworkSamples(listParams);
+        const rows = getAvailabilitySampleRows(result);
         this.mergeAvailabilityInspectionRows(rows || []);
+        this.mergeAvailabilitySampleRows(rows || []);
       } catch (e) {
         this.availabilityErrorMessage = getErrorMessage(e);
       }
@@ -57,14 +61,10 @@ export default {
       this.inspectingAvailability = false;
     },
     mergeAvailabilityInspectionRows(rows) {
-      const rowsByStorageId = {};
-      this.availabilityInspectionRows.forEach((row) => {
-        rowsByStorageId[row.storageId] = row;
-      });
-      rows.forEach((row) => {
-        rowsByStorageId[row.storageId] = row;
-      });
-      this.availabilityInspectionRows = Object.keys(rowsByStorageId).map((storageId) => rowsByStorageId[storageId]);
+      this.availabilityInspectionRows = mergeAvailabilityRowsByStorageId(this.availabilityInspectionRows, rows);
+    },
+    mergeAvailabilitySampleRows(rows) {
+      this.availabilitySampleRows = mergeAvailabilityRowsByStorageId(this.availabilitySampleRows, rows);
     },
     setActiveTable(tabName) {
       this.activeTable = tabName;
@@ -131,6 +131,15 @@ export default {
         return row.retrievalErrorMessage || 'stat failed';
       }
       return row.retrievalType || 'ok';
+    },
+    getSampledAtText(row) {
+      if (!row) {
+        return '-';
+      }
+      if (!row.sampledAt) {
+        return 'Live';
+      }
+      return formatUtcDateTime(row.sampledAt);
     }
   },
   watch: {
@@ -150,8 +159,11 @@ export default {
     physicalSavingsBytes() {
       return Math.max(0, readNumber(this.overview && this.overview.logicalContentBytes) - readNumber(this.overview && this.overview.physicalContentBytes));
     },
-    availabilityInspectionByStorageId() {
+    availabilityNetworkRowsByStorageId() {
       const rowsByStorageId = {};
+      this.availabilitySampleRows.forEach((row) => {
+        rowsByStorageId[row.storageId] = row;
+      });
       this.availabilityInspectionRows.forEach((row) => {
         rowsByStorageId[row.storageId] = row;
       });
@@ -167,6 +179,7 @@ export default {
       topFileCatalogItems: [],
       topGroups: [],
       availabilitySignals: [],
+      availabilitySampleRows: [],
       availabilityInspectionRows: [],
       activeTable: 'contents',
       pageLimit: 20,
@@ -203,6 +216,27 @@ function getAvailabilityInspectionParams(limit, storageId = null) {
   return params;
 }
 
+function getAvailabilitySampleRows(result) {
+  if (Array.isArray(result)) {
+    return result;
+  }
+  if (result && Array.isArray(result.rows)) {
+    return result.rows;
+  }
+  return [];
+}
+
+function mergeAvailabilityRowsByStorageId(existingRows, nextRows) {
+  const rowsByStorageId = {};
+  (existingRows || []).forEach((row) => {
+    rowsByStorageId[row.storageId] = row;
+  });
+  (nextRows || []).forEach((row) => {
+    rowsByStorageId[row.storageId] = row;
+  });
+  return Object.keys(rowsByStorageId).map((storageId) => rowsByStorageId[storageId]);
+}
+
 function getName(value, fallback) {
   if (value) {
     return value;
@@ -233,6 +267,22 @@ function getCountText(value, label) {
   const count = readNumber(value);
   const suffix = count === 1 ? label : `${label}s`;
   return `${count.toLocaleString()} ${suffix}`;
+}
+
+function formatUtcDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  return [
+    `${date.getUTCFullYear()}-${padDatePart(date.getUTCMonth() + 1)}-${padDatePart(date.getUTCDate())}`,
+    `${padDatePart(date.getUTCHours())}:${padDatePart(date.getUTCMinutes())} UTC`
+  ].join(' ');
+}
+
+function padDatePart(value) {
+  return String(value).padStart(2, '0');
 }
 
 function getErrorMessage(error) {
