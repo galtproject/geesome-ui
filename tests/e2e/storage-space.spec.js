@@ -37,6 +37,8 @@ test('storage space UI summarizes usage and switches drilldown tables (dual view
   await saveShot(page, 'storage-space-mobile.png');
   await page.locator('.md-tabs-navigation').getByText('Availability').click();
   await expect(page.getByText('bafy-availability-poster')).toBeVisible();
+  await expect(page.getByText('3 providers')).toBeVisible();
+  await expect(page.getByText('2026-05-22 08:30 UTC')).toBeVisible();
   await saveShot(page, 'storage-space-availability-mobile.png');
 
   await page.setViewportSize(DESKTOP_VIEWPORT);
@@ -59,10 +61,12 @@ test('storage space UI summarizes usage and switches drilldown tables (dual view
   await expect(page.getByText('bafy-availability-poster')).toBeVisible();
   await expect(page.getByText('7')).toBeVisible();
   await expect.poll(async () => (await calls(page, 'adminInspectStorageSpaceAvailabilityNetworkSignals')).length).toBe(0);
+  await expect.poll(async () => (await calls(page, 'adminRefreshStorageSpaceAvailabilityNetworkSamples')).length).toBe(0);
   await page.getByRole('button', {name: 'Inspect visible availability network'}).click();
   await expect(page.getByText('2 providers')).toBeVisible();
   await expect(page.getByText('peer-a')).toBeVisible();
   await expect(page.getByText('stat timeout')).toBeVisible();
+  await expect(page.getByText('2026-05-22 09:00 UTC').first()).toBeVisible();
   await saveShot(page, 'storage-space-availability-desktop.png');
 
   await page.getByRole('button', {name: 'Refresh storage analysis'}).click();
@@ -72,7 +76,9 @@ test('storage space UI summarizes usage and switches drilldown tables (dual view
   expect(topContentCalls[0].listParams).toMatchObject({limit: 20, offset: 0});
   const availabilityCalls = await calls(page, 'adminGetStorageSpaceAvailabilitySignals');
   expect(availabilityCalls[0].listParams).toMatchObject({limit: 20, offset: 0});
-  const networkCalls = await calls(page, 'adminInspectStorageSpaceAvailabilityNetworkSignals');
+  const sampleCalls = await calls(page, 'adminGetStorageSpaceAvailabilityNetworkSamples');
+  expect(sampleCalls[0].listParams).toMatchObject({limit: 20, offset: 0});
+  const networkCalls = await calls(page, 'adminRefreshStorageSpaceAvailabilityNetworkSamples');
   expect(networkCalls[0].listParams).toMatchObject({
     limit: 20,
     offset: 0,

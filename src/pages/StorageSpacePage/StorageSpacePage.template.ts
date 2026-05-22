@@ -194,6 +194,7 @@ module.exports = `
           <md-table-head>Refs</md-table-head>
           <md-table-head>Providers</md-table-head>
           <md-table-head>Retrieval</md-table-head>
+          <md-table-head>Sampled</md-table-head>
           <md-table-head></md-table-head>
         </md-table-row>
 
@@ -205,24 +206,25 @@ module.exports = `
           <md-table-cell>{{getAvailabilityPinsText(item)}}</md-table-cell>
           <md-table-cell>{{getAvailabilityRefsText(item)}}</md-table-cell>
           <md-table-cell>
-            <template v-if="availabilityInspectionByStorageId[item.storageId]">
-              <span v-if="availabilityInspectionByStorageId[item.storageId].providerLookupOk">
-                {{getProviderCountText(availabilityInspectionByStorageId[item.storageId])}}
+            <template v-if="availabilityNetworkRowsByStorageId[item.storageId]">
+              <span v-if="availabilityNetworkRowsByStorageId[item.storageId].providerLookupOk">
+                {{getProviderCountText(availabilityNetworkRowsByStorageId[item.storageId])}}
               </span>
-              <span v-else>{{availabilityInspectionByStorageId[item.storageId].providerLookupErrorMessage || 'lookup failed'}}</span>
-              <small class="storage-space-secondary-text">{{getProviderSampleText(availabilityInspectionByStorageId[item.storageId])}}</small>
+              <span v-else>{{availabilityNetworkRowsByStorageId[item.storageId].providerLookupErrorMessage || 'lookup failed'}}</span>
+              <small class="storage-space-secondary-text">{{getProviderSampleText(availabilityNetworkRowsByStorageId[item.storageId])}}</small>
             </template>
             <span v-else>-</span>
           </md-table-cell>
           <md-table-cell>
-            <template v-if="availabilityInspectionByStorageId[item.storageId]">
-              <span>{{getRetrievalText(availabilityInspectionByStorageId[item.storageId])}}</span>
-              <small class="storage-space-secondary-text" v-if="availabilityInspectionByStorageId[item.storageId].retrievalStatOk">
-                {{availabilityInspectionByStorageId[item.storageId].retrievalMeasuredBytes | prettySize}}
+            <template v-if="availabilityNetworkRowsByStorageId[item.storageId]">
+              <span>{{getRetrievalText(availabilityNetworkRowsByStorageId[item.storageId])}}</span>
+              <small class="storage-space-secondary-text" v-if="availabilityNetworkRowsByStorageId[item.storageId].retrievalStatOk">
+                {{availabilityNetworkRowsByStorageId[item.storageId].retrievalMeasuredBytes | prettySize}}
               </small>
             </template>
             <span v-else>-</span>
           </md-table-cell>
+          <md-table-cell>{{getSampledAtText(availabilityNetworkRowsByStorageId[item.storageId])}}</md-table-cell>
           <md-table-cell>
             <md-button class="md-icon-button md-primary" @click="inspectAvailabilitySignals(item.storageId)" :disabled="inspectingAvailability" :aria-label="'Inspect ' + item.storageId">
               <md-icon class="fas fa-search"></md-icon>
