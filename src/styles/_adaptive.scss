@@ -75,7 +75,15 @@
       display: block;
     }
 
+    .storage-space-actions {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
     .storage-space-limit-field {
+      flex: 1 1 auto;
       width: 100%;
       margin-top: 0;
     }

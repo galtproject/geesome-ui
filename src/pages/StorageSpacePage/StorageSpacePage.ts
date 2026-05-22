@@ -26,7 +26,8 @@ export default {
           this.$geesome.adminGetStorageSpaceTypeBreakdown(listParams),
           this.$geesome.adminGetStorageSpaceTopContents(listParams),
           this.$geesome.adminGetStorageSpaceTopFileCatalogItems(listParams),
-          this.$geesome.adminGetStorageSpaceTopGroups(listParams)
+          this.$geesome.adminGetStorageSpaceTopGroups(listParams),
+          this.$geesome.adminGetStorageSpaceAvailabilitySignals(listParams)
         ]);
 
         this.overview = results[0] || {};
@@ -34,11 +35,36 @@ export default {
         this.topContents = results[2] || [];
         this.topFileCatalogItems = results[3] || [];
         this.topGroups = results[4] || [];
+        this.availabilitySignals = results[5] || [];
       } catch (e) {
         this.errorMessage = getErrorMessage(e);
       }
 
       this.loading = false;
+    },
+    async inspectAvailabilitySignals(storageId = null) {
+      this.inspectingAvailability = true;
+      this.availabilityErrorMessage = null;
+
+      try {
+        const listParams = getAvailabilityInspectionParams(this.pageLimit, storageId);
+        const rows = await this.$geesome.adminInspectStorageSpaceAvailabilityNetworkSignals(listParams);
+        this.mergeAvailabilityInspectionRows(rows || []);
+      } catch (e) {
+        this.availabilityErrorMessage = getErrorMessage(e);
+      }
+
+      this.inspectingAvailability = false;
+    },
+    mergeAvailabilityInspectionRows(rows) {
+      const rowsByStorageId = {};
+      this.availabilityInspectionRows.forEach((row) => {
+        rowsByStorageId[row.storageId] = row;
+      });
+      rows.forEach((row) => {
+        rowsByStorageId[row.storageId] = row;
+      });
+      this.availabilityInspectionRows = Object.keys(rowsByStorageId).map((storageId) => rowsByStorageId[storageId]);
     },
     setActiveTable(tabName) {
       this.activeTable = tabName;
@@ -70,6 +96,41 @@ export default {
     },
     getStorageObjectsText(value) {
       return getCountText(value, 'object');
+    },
+    getAvailabilityRefsText(item) {
+      const refs = readNumber(item && item.contentRowsCount)
+        + readNumber(item && item.activeFileCatalogRefsCount)
+        + readNumber(item && item.groupPostRefsCount)
+        + readNumber(item && item.generatedOutputRefsCount);
+      return getCountText(refs, 'ref');
+    },
+    getAvailabilityPinsText(item) {
+      const localPins = readNumber(item && item.localPinRefsCount);
+      const remotePins = readNumber(item && item.remotePinsCount);
+      return `${localPins.toLocaleString()} local / ${remotePins.toLocaleString()} remote`;
+    },
+    getProviderCountText(row) {
+      const count = readNumber(row && row.providersCount);
+      const suffix = count === 1 ? 'provider' : 'providers';
+      const truncated = row && row.providersTruncated ? '+' : '';
+      return `${count.toLocaleString()}${truncated} ${suffix}`;
+    },
+    getProviderSampleText(row) {
+      const providers = row && Array.isArray(row.providers) ? row.providers : [];
+      const sample = providers
+        .map(provider => provider && provider.id)
+        .filter(Boolean)
+        .slice(0, 2);
+      return sample.length ? sample.join(', ') : '';
+    },
+    getRetrievalText(row) {
+      if (!row) {
+        return '-';
+      }
+      if (!row.retrievalStatOk) {
+        return row.retrievalErrorMessage || 'stat failed';
+      }
+      return row.retrievalType || 'ok';
     }
   },
   watch: {
@@ -88,6 +149,13 @@ export default {
     },
     physicalSavingsBytes() {
       return Math.max(0, readNumber(this.overview && this.overview.logicalContentBytes) - readNumber(this.overview && this.overview.physicalContentBytes));
+    },
+    availabilityInspectionByStorageId() {
+      const rowsByStorageId = {};
+      this.availabilityInspectionRows.forEach((row) => {
+        rowsByStorageId[row.storageId] = row;
+      });
+      return rowsByStorageId;
     }
   },
   data() {
@@ -98,9 +166,13 @@ export default {
       topContents: [],
       topFileCatalogItems: [],
       topGroups: [],
+      availabilitySignals: [],
+      availabilityInspectionRows: [],
       activeTable: 'contents',
       pageLimit: 20,
       loading: false,
+      inspectingAvailability: false,
+      availabilityErrorMessage: null,
       errorMessage: null
     };
   }
@@ -111,6 +183,24 @@ function getListParams(limit) {
     limit,
     offset: 0
   };
+}
+
+function getAvailabilityInspectionParams(limit, storageId = null) {
+  const params: any = {
+    limit: storageId ? 1 : limit,
+    offset: 0,
+    providerLimit: 10,
+    providerAddressLimit: 2,
+    providerTimeoutMs: 5000,
+    statTimeoutMs: 5000,
+    statWithLocal: false
+  };
+
+  if (storageId) {
+    params.storageId = storageId;
+  }
+
+  return params;
 }
 
 function getName(value, fallback) {

@@ -45,6 +45,56 @@ const topFileCatalogItems = [
 const topGroups = [
   {id: 31, name: 'test-channel', title: 'Test Channel', size: 1600, availablePostsCount: 4}
 ];
+const availabilitySignals = [
+  {
+    storageId: 'bafy-availability-poster',
+    physicalBytes: 2048,
+    contentRowsCount: 2,
+    activeFileCatalogRefsCount: 1,
+    groupPostRefsCount: 3,
+    generatedOutputRefsCount: 0,
+    localPinRefsCount: 1,
+    remotePinsCount: 2,
+    maxPeerCount: 7
+  },
+  {
+    storageId: 'bafy-availability-notes',
+    physicalBytes: 1024,
+    contentRowsCount: 1,
+    activeFileCatalogRefsCount: 0,
+    groupPostRefsCount: 1,
+    generatedOutputRefsCount: 1,
+    localPinRefsCount: 0,
+    remotePinsCount: 0,
+    maxPeerCount: 1
+  }
+];
+const availabilityInspection = [
+  {
+    storageId: 'bafy-availability-poster',
+    providerLookupOk: true,
+    providersCount: 2,
+    providersTruncated: false,
+    providerLookupDurationMs: 120,
+    providers: [{id: 'peer-a', multiaddrs: ['/ip4/127.0.0.1/tcp/4001'], protocols: [], source: 'kubo-routing'}],
+    retrievalStatOk: true,
+    retrievalStatDurationMs: 80,
+    retrievalType: 'file',
+    retrievalMeasuredBytes: 2048
+  },
+  {
+    storageId: 'bafy-availability-notes',
+    providerLookupOk: true,
+    providersCount: 1,
+    providersTruncated: false,
+    providerLookupDurationMs: 70,
+    providers: [{id: 'peer-b', multiaddrs: ['/ip4/127.0.0.2/tcp/4001'], protocols: [], source: 'kubo-routing'}],
+    retrievalStatOk: false,
+    retrievalStatDurationMs: 5000,
+    retrievalMeasuredBytes: 0,
+    retrievalErrorMessage: 'stat timeout'
+  }
+];
 
 Vue.use(VueMaterial);
 Vue.component('upload-content', UploadContent);
@@ -103,6 +153,17 @@ Vue.prototype.$geesome = {
   async adminGetStorageSpaceTopGroups(listParams) {
     calls.push({type: 'adminGetStorageSpaceTopGroups', listParams});
     return topGroups;
+  },
+  async adminGetStorageSpaceAvailabilitySignals(listParams) {
+    calls.push({type: 'adminGetStorageSpaceAvailabilitySignals', listParams});
+    return availabilitySignals;
+  },
+  async adminInspectStorageSpaceAvailabilityNetworkSignals(listParams) {
+    calls.push({type: 'adminInspectStorageSpaceAvailabilityNetworkSignals', listParams});
+    if (listParams && listParams.storageId) {
+      return availabilityInspection.filter(item => item.storageId === listParams.storageId);
+    }
+    return availabilityInspection;
   }
 };
 
