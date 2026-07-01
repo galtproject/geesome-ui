@@ -10,6 +10,7 @@
 import MediaElement from "geesome-vue-components/src/directives/MediaElement/MediaElement";
 import PrettyName from "../PrettyName/PrettyName";
 import ImageModal from "../../modals/ImageModal/ImageModal";
+import {sanitizeHtml} from "../../libs/htmlSafety";
 
 const fileSaver = require('file-saver');
 const mime = require('mime/lite');
@@ -133,6 +134,12 @@ export default {
     },
     contentType() {
       return this.previewMode && this.manifestObj.preview ? this.manifestObj.preview.medium.mimeType : this.manifestObj.mimeType;
+    },
+    sanitizedContent() {
+      if (this.resultType !== 'text' || !this.content) {
+        return '';
+      }
+      return sanitizeHtml(this.content);
     },
     manifestPreviewContentId() {
       return this.manifestObj && this.manifestObj.preview && this.manifestObj.preview.medium.storageId;

@@ -8,6 +8,8 @@
  */
 
 // const pIteration = require('p-iteration');
+import {sanitizeHtml} from "../../../libs/htmlSafety";
+
 const _ = require('lodash');
 
 export default {
@@ -61,6 +63,9 @@ export default {
     },
     lastMessageText() {
       return this.group ? this.$store.state.lastPostText[this.group.id] : null;
+    },
+    sanitizedLastMessageText() {
+      return sanitizeHtml(this.lastMessageText);
     },
     personalChatIpns() {
       if(!this.group || !this.user) {

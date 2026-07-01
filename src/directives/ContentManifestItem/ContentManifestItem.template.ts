@@ -4,7 +4,7 @@ module.exports = `
   <a v-if="resultType === 'image' && !previewMode" href @click.prevent="openImage"><img :src="content"></a>
 
   <media-element v-if="resultType === 'video' && content" :source="content" :preview="previewSrcLink"></media-element>
-  <span v-if="resultType === 'text' && content" v-html="content"></span>
+  <span v-if="resultType === 'text' && content" v-html="sanitizedContent"></span>
 
   <div class="md-layout" v-if="resultType === 'file'" style="align-items: center;">
     <div :class="{'md-layout-item': true, 'md-size-10': !previewMode, 'md-size-100': previewMode}"

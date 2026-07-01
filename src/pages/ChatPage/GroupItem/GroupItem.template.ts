@@ -6,7 +6,7 @@ module.exports = `
     <div class="info">
         <div class="name"><span>{{title}}</span></div> 
         <!--<pretty-hex :hex="group.ipns"></pretty-hex>-->
-        <div class="text" v-html="lastMessageText"></div>
+        <div class="text" v-html="sanitizedLastMessageText"></div>
     </div>
     <div class="date">{{group.updatedAt | prettyDate}}</div>
 </router-link>
