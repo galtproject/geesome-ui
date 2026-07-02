@@ -2,8 +2,10 @@ import Vue from 'vue';
 import VueMaterial from 'vue-material';
 import 'vue-material/dist/vue-material.min.css';
 import '../../src/styles/main.scss';
+import PostItem from '../../src/directives/Posts/PostItem/PostItem';
 import PinServices from '../../src/pages/UsersSection/UserProfile/PinServices/PinServices';
 import StorageSpacePage from '../../src/pages/StorageSpacePage/StorageSpacePage';
+import ContentManifestItem from '../../src/directives/ContentManifestItem/ContentManifestItem';
 import ActivityPubRemoteObjectsPage from '../../src/pages/GroupPage/ActivityPubRemoteObjectsPage/ActivityPubRemoteObjectsPage';
 import UploadContent from '../../src/directives/UploadContent/UploadContent';
 
@@ -113,6 +115,37 @@ const availabilitySamples = [
     sampledAt: '2026-05-22T08:30:00.000Z'
   }
 ];
+const postFixtureGroup = {
+  id: 31,
+  staticId: 'test-channel',
+  name: 'test-channel',
+  title: 'Test Channel'
+};
+const postFixtureContent = [
+  '<p onclick="alert(1)">Hello <strong>safe post</strong></p>',
+  '<script>window.__geesomePostXss = true</script>',
+  '<a href="javascript:alert(2)">bad link</a>',
+  '<a href="https://example.com/safe" target="_blank">safe link</a>',
+  '<a href="ipfs://bafybeigdyrzt">ipfs link</a>',
+  '<iframe src="https://example.com/embed"></iframe>',
+  '<span style="color:red">unstyled text</span>'
+].join('');
+const postFixture = {
+  id: 7,
+  localId: 7,
+  groupId: postFixtureGroup.staticId,
+  manifestId: 'bafy-post-manifest',
+  publishedAt: 1767225600,
+  contents: [{
+    position: 0,
+    view: 'contents',
+    storageId: {
+      storageId: 'bafy-post-text',
+      mimeType: 'text/html',
+      extension: 'html'
+    }
+  }]
+};
 const activityPubGroup = {
   id: 31,
   name: 'test-channel',
@@ -182,6 +215,11 @@ const activityPubAttachmentPolicy = {
 
 Vue.use(VueMaterial);
 Vue.component('upload-content', UploadContent);
+Vue.component('content-manifest-item', ContentManifestItem);
+Vue.component('router-link', {
+  props: ['to'],
+  template: '<a href="#"><slot></slot></a>'
+});
 Vue.component('pretty-hex', {
   props: ['hex'],
   template: '<span class="pretty-hex">{{hex || "-"}}</span>'
@@ -191,6 +229,11 @@ Vue.filter('prettySize', prettySize);
 
 Vue.prototype.$notify = (payload) => {
   calls.push({type: 'notify', payload});
+};
+Vue.prototype.$store = {
+  state: {
+    cybActive: false
+  }
 };
 
 Vue.prototype.$geesome = {
@@ -213,6 +256,21 @@ Vue.prototype.$geesome = {
   async deletePinAccount(accountId) {
     calls.push({type: 'deletePinAccount', accountId});
     return {success: true};
+  },
+  async getGroup(groupId) {
+    calls.push({type: 'getGroup', groupId});
+    return postFixtureGroup;
+  },
+  async getContentLink(storageId) {
+    calls.push({type: 'getContentLink', storageId});
+    return `/ipfs/${storageId}`;
+  },
+  async getContentData(storageId) {
+    calls.push({type: 'getContentData', storageId});
+    if (storageId === 'bafy-post-text') {
+      return postFixtureContent;
+    }
+    return '';
   },
   async saveFile(file, params) {
     calls.push({type: 'saveFile', fileName: file.name, params});
@@ -334,33 +392,50 @@ Vue.prototype.$geesome = {
 
 (window as any).__PIN_SERVICES_E2E__ = {calls};
 (window as any).__STORAGE_SPACE_E2E__ = {calls};
+(window as any).__POST_HTML_SAFETY_E2E__ = {calls};
 (window as any).__ACTIVITYPUB_REVIEW_E2E__ = {calls, activityPubRemoteObjects};
 
 new Vue({
   el: '#app',
-  components: {PinServices, StorageSpacePage, ActivityPubRemoteObjectsPage},
+  components: {PinServices, PostItem, StorageSpacePage, ActivityPubRemoteObjectsPage},
   data() {
-    let currentPage = 'pin-services';
-    if (window.location.hash === '#storage-space') {
-      currentPage = 'storage-space';
-    }
-    if (window.location.hash === '#activitypub') {
-      currentPage = 'activitypub';
-    }
-
     return {
-      currentPage,
+      currentPage: getCurrentPage(),
+      postFixture,
+      postFixtureGroup,
       activityPubGroup
     };
   },
+  created() {
+    (window as any).addEventListener('hashchange', () => {
+      this.currentPage = getCurrentPage();
+    });
+  },
   template: `
     <main>
-      <storage-space-page v-if="currentPage === 'storage-space'" />
+      <section v-if="currentPage === 'post-html-safety'" aria-label="Post HTML safety fixture">
+        <h1>Post HTML safety</h1>
+        <post-item :value="postFixture" :group="postFixtureGroup" />
+      </section>
+      <storage-space-page v-else-if="currentPage === 'storage-space'" />
       <activity-pub-remote-objects-page v-else-if="currentPage === 'activitypub'" :group="activityPubGroup" />
       <pin-services v-else />
     </main>
   `
 });
+
+function getCurrentPage() {
+  if (window.location.hash === '#storage-space') {
+    return 'storage-space';
+  }
+  if (window.location.hash === '#post-html-safety') {
+    return 'post-html-safety';
+  }
+  if (window.location.hash === '#activitypub') {
+    return 'activitypub';
+  }
+  return 'pin-services';
+}
 
 function prettySize(value) {
   let size = Number(value || 0);
