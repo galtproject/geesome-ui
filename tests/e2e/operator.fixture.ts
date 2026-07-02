@@ -4,6 +4,7 @@ import 'vue-material/dist/vue-material.min.css';
 import '../../src/styles/main.scss';
 import PinServices from '../../src/pages/UsersSection/UserProfile/PinServices/PinServices';
 import StorageSpacePage from '../../src/pages/StorageSpacePage/StorageSpacePage';
+import ActivityPubRemoteObjectsPage from '../../src/pages/GroupPage/ActivityPubRemoteObjectsPage/ActivityPubRemoteObjectsPage';
 import UploadContent from '../../src/directives/UploadContent/UploadContent';
 
 const calls: any[] = [];
@@ -112,6 +113,72 @@ const availabilitySamples = [
     sampledAt: '2026-05-22T08:30:00.000Z'
   }
 ];
+const activityPubGroup = {
+  id: 31,
+  name: 'test-channel',
+  title: 'Test Channel',
+  staticId: 'bafz-test-channel',
+  postsCount: 4
+};
+const activityPubRemoteObjects = [
+  {
+    id: 501,
+    objectId: 'https://remote.example/objects/reply-1',
+    objectType: 'Note',
+    visibility: 'public',
+    reviewState: 'pending',
+    localPostId: null,
+    remoteActor: {
+      preferredUsername: 'alice',
+      actorUrl: 'https://remote.example/users/alice'
+    },
+    preview: {
+      name: 'Remote reply',
+      contentText: 'Remote reply for review',
+      summaryText: 'Remote summary',
+      url: 'https://remote.example/@alice/reply-1'
+    }
+  },
+  {
+    id: 502,
+    objectId: 'https://remote.example/objects/article-1',
+    objectType: 'Article',
+    visibility: 'public',
+    reviewState: 'pending',
+    localPostId: null,
+    remoteActor: {
+      preferredUsername: 'bob',
+      actorUrl: 'https://remote.example/users/bob'
+    },
+    preview: {
+      name: 'Remote article',
+      contentText: 'Article waits for richer object policy'
+    }
+  }
+];
+const activityPubAttachments = [
+  {
+    url: 'https://remote.example/media/photo.png',
+    type: 'Image',
+    mediaType: 'image/png',
+    mediaCategory: 'image',
+    name: 'Remote image',
+    width: 640,
+    height: 480
+  },
+  {
+    url: 'ipfs://bafyremoteattachment',
+    type: 'Link',
+    mediaCategory: 'link',
+    name: 'IPFS source'
+  }
+];
+const activityPubAttachmentPolicy = {
+  mode: 'provenanceOnly',
+  defaultMode: 'provenanceOnly',
+  canImportRemoteBytes: true,
+  supportedModes: ['provenanceOnly', 'backupOnCreate']
+};
 
 Vue.use(VueMaterial);
 Vue.component('upload-content', UploadContent);
@@ -127,6 +194,10 @@ Vue.prototype.$notify = (payload) => {
 };
 
 Vue.prototype.$geesome = {
+  async adminIsHaveCorePermission(permissionName) {
+    calls.push({type: 'adminIsHaveCorePermission', permissionName});
+    return permissionName === 'admin:all' || permissionName === 'admin:read';
+  },
   async getUserPinAccounts() {
     calls.push({type: 'getUserPinAccounts'});
     return {list: accounts};
@@ -201,23 +272,91 @@ Vue.prototype.$geesome = {
         sampledAt: '2026-05-22T09:00:00.000Z'
       }))
     };
+  },
+  async adminGetActivityPubRemoteObjects(groupName, filters) {
+    calls.push({type: 'adminGetActivityPubRemoteObjects', groupName, filters});
+    const reviewState = filters && filters.reviewState;
+    const list = activityPubRemoteObjects.filter((item) => item.reviewState === reviewState);
+    return {
+      list,
+      total: list.length
+    };
+  },
+  async adminGetActivityPubRemoteObject(groupName, remoteObjectId) {
+    calls.push({type: 'adminGetActivityPubRemoteObject', groupName, remoteObjectId});
+    return activityPubRemoteObjects.find((item) => Number(item.id) === Number(remoteObjectId));
+  },
+  async adminGetActivityPubRemoteObjectPostDraft(groupName, remoteObjectId) {
+    calls.push({type: 'adminGetActivityPubRemoteObjectPostDraft', groupName, remoteObjectId});
+    const remoteObject = activityPubRemoteObjects.find((item) => Number(item.id) === Number(remoteObjectId));
+    const accepted = remoteObject && remoteObject.reviewState === 'accepted';
+    const canCreatePost = !!accepted && remoteObject.objectType === 'Note' && !remoteObject.localPostId;
+    return {
+      remoteObject,
+      canCreatePost,
+      reasons: canCreatePost ? [] : ['activitypub_remote_object_review_not_accepted'],
+      contentText: remoteObject && remoteObject.preview && remoteObject.preview.contentText,
+      title: remoteObject && remoteObject.preview && remoteObject.preview.name,
+      attachments: remoteObject && remoteObject.id === 501 ? activityPubAttachments : [],
+      attachmentImportPolicy: activityPubAttachmentPolicy
+    };
+  },
+  async adminSetActivityPubRemoteObjectReviewState(groupName, remoteObjectId, input) {
+    calls.push({type: 'adminSetActivityPubRemoteObjectReviewState', groupName, remoteObjectId, input});
+    const remoteObject = activityPubRemoteObjects.find((item) => Number(item.id) === Number(remoteObjectId));
+    if (remoteObject) {
+      remoteObject.reviewState = input.state;
+    }
+    return remoteObject;
+  },
+  async adminCreateActivityPubRemoteObjectPost(groupName, remoteObjectId, options) {
+    calls.push({type: 'adminCreateActivityPubRemoteObjectPost', groupName, remoteObjectId, options});
+    const remoteObject = activityPubRemoteObjects.find((item) => Number(item.id) === Number(remoteObjectId));
+    if (remoteObject) {
+      remoteObject.localPostId = 88;
+    }
+    return {
+      post: {id: 88, isRemote: true},
+      remoteObject,
+      attachmentBackups: options && options.importRemoteAttachments ? [
+        {
+          url: 'https://remote.example/media/photo.png',
+          contentId: 301,
+          storageId: 'saved-url-content-1',
+          mediaType: 'image/png',
+          mediaCategory: 'image',
+          name: 'Remote image'
+        }
+      ] : []
+    };
   }
 };
 
 (window as any).__PIN_SERVICES_E2E__ = {calls};
 (window as any).__STORAGE_SPACE_E2E__ = {calls};
+(window as any).__ACTIVITYPUB_REVIEW_E2E__ = {calls, activityPubRemoteObjects};
 
 new Vue({
   el: '#app',
-  components: {PinServices, StorageSpacePage},
+  components: {PinServices, StorageSpacePage, ActivityPubRemoteObjectsPage},
   data() {
+    let currentPage = 'pin-services';
+    if (window.location.hash === '#storage-space') {
+      currentPage = 'storage-space';
+    }
+    if (window.location.hash === '#activitypub') {
+      currentPage = 'activitypub';
+    }
+
     return {
-      currentPage: window.location.hash === '#storage-space' ? 'storage-space' : 'pin-services'
+      currentPage,
+      activityPubGroup
     };
   },
   template: `
     <main>
       <storage-space-page v-if="currentPage === 'storage-space'" />
+      <activity-pub-remote-objects-page v-else-if="currentPage === 'activitypub'" :group="activityPubGroup" />
       <pin-services v-else />
     </main>
   `

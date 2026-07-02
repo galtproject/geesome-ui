@@ -26,6 +26,7 @@ module.exports = `
   	<div v-if="isCanEditGroup">
   	    <md-button :to="{name: 'edit-group', params: {groupId: group.staticId}}">Edit</md-button>
 		<md-button :to="{name: 'static-site-manager', params: {type: 'group', id: group.staticId}}">Static site manager</md-button>
+		<md-button v-if="group.name && haveAdminReadPermission" :to="{name: 'group-activitypub-review', params: {groupId: group.staticId}}">ActivityPub</md-button>
 	</div>
     <div v-else>
       <md-button class="md-accent" v-if="isJoined" @click="leaveGroup">Unsubscribe</md-button>

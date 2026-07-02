@@ -54,7 +54,8 @@ async function main() {
   const playwrightBin = path.join(repoRoot, 'node_modules/.bin/playwright');
   const specArgs = args.screens ? [
     'tests/e2e/pin-services.spec.js',
-    'tests/e2e/storage-space.spec.js'
+    'tests/e2e/storage-space.spec.js',
+    'tests/e2e/activitypub-review.spec.js'
   ] : [];
 
   console.log(`[geesome-ui:e2e] frontend port ${port}`);
