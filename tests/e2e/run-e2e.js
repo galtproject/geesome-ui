@@ -56,7 +56,8 @@ async function main() {
     'tests/e2e/pin-services.spec.js',
     'tests/e2e/post-html-safety.spec.js',
     'tests/e2e/storage-space.spec.js',
-    'tests/e2e/activitypub-review.spec.js'
+    'tests/e2e/activitypub-review.spec.js',
+    'tests/e2e/activitypub-sources.spec.js'
   ] : [];
 
   console.log(`[geesome-ui:e2e] frontend port ${port}`);
