@@ -251,6 +251,191 @@ a.icon-link {
   }
 }
 
+.activitypub-sources-page {
+  .activitypub-sources-title,
+  .activitypub-source-feed-header,
+  .activitypub-source-feed-actions,
+  .activitypub-feed-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .activitypub-sources-heading,
+  .activitypub-source-feed h2,
+  .activitypub-feed-item h3 {
+    margin: 0;
+  }
+
+  .activitypub-sources-subscribe {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) minmax(220px, 1fr) minmax(170px, 240px) auto;
+    gap: 12px;
+    align-items: end;
+  }
+
+  .activitypub-sources-subscribe-button {
+    min-height: 42px;
+    white-space: nowrap;
+  }
+
+  .activitypub-sources-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .activitypub-source-list,
+  .activitypub-source-feed,
+  .activitypub-feed-item,
+  .activitypub-feed-attachments {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .activitypub-source-list-item {
+    align-items: center;
+    background: #211d27;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: inherit;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 84px;
+    padding: 10px;
+    text-align: left;
+    width: 100%;
+
+    &.active {
+      background: #302138;
+      border-color: #9c27b0;
+    }
+  }
+
+  .activitypub-source-avatar {
+    align-items: center;
+    background: #00695c;
+    border-radius: 6px;
+    display: inline-flex;
+    font-weight: 700;
+    height: 40px;
+    justify-content: center;
+    letter-spacing: 0;
+    width: 40px;
+  }
+
+  .activitypub-source-list-text,
+  .activitypub-source-list-side,
+  .activitypub-feed-item-states {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .activitypub-source-list-side,
+  .activitypub-feed-item-states {
+    align-items: flex-end;
+  }
+
+  .activitypub-source-list-text strong,
+  .activitypub-source-list-text small,
+  .activitypub-sources-muted,
+  .activitypub-sources-empty,
+  .activitypub-sources-error,
+  .activitypub-sources-success,
+  .activitypub-feed-text,
+  .activitypub-feed-link,
+  .activitypub-source-attachment small {
+    overflow-wrap: anywhere;
+  }
+
+  .activitypub-sources-muted,
+  .activitypub-sources-empty,
+  .activitypub-source-attachment small {
+    color: #bdbdbd;
+  }
+
+  .activitypub-sources-error {
+    color: #ff8a80;
+    margin-top: 8px;
+  }
+
+  .activitypub-sources-success {
+    color: #69f0ae;
+    margin-top: 8px;
+  }
+
+  .activitypub-source-status,
+  .activitypub-source-unread,
+  .activitypub-feed-state,
+  .activitypub-source-attachment {
+    border-radius: 4px;
+  }
+
+  .activitypub-source-status,
+  .activitypub-source-unread,
+  .activitypub-feed-state {
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 7px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .activitypub-source-status.status-active,
+  .activitypub-feed-state.review-accepted {
+    background: #1b5e20;
+  }
+
+  .activitypub-source-status.status-paused {
+    background: #5d4037;
+  }
+
+  .activitypub-source-status.status-removed,
+  .activitypub-feed-state.review-rejected {
+    background: #8e2424;
+  }
+
+  .activitypub-source-unread,
+  .activitypub-feed-state.review-pending {
+    background: #455a64;
+  }
+
+  .activitypub-source-feed-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .activitypub-feed-item {
+    background: #211d27;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 12px;
+
+    &.unread {
+      border-color: #00acc1;
+    }
+  }
+
+  .activitypub-feed-text {
+    white-space: pre-wrap;
+  }
+
+  .activitypub-feed-link {
+    color: #ffb74d;
+  }
+
+  .activitypub-source-attachment {
+    background: #19161c;
+    padding: 8px;
+  }
+}
+
 .md-app-content {
   .new-post-card {
     margin-right: 0;

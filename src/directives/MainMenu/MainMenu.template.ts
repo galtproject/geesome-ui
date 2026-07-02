@@ -36,6 +36,11 @@ module.exports = `
       <span class="md-list-item-text" v-locale="localeKey + '.storage_space'"></span>
     </md-list-item>
 
+    <md-list-item :to="{name: 'activitypub-sources'}" v-if="haveAdminReadPermission">
+      <md-icon class="fas fa-rss"></md-icon>
+      <span class="md-list-item-text" v-locale="localeKey + '.activitypub_sources'"></span>
+    </md-list-item>
+
     <md-list-item :to="{name: 'admined-groups'}" v-if="user">
       <md-icon class="fas fa-users-cog"></md-icon>
       <span class="md-list-item-text" v-locale="localeKey + '.administration_groups'"></span>

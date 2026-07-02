@@ -29,7 +29,7 @@ test('ActivityPub review UI accepts remote objects and creates a backed-up post 
   await page.goto(`${baseURL}/#activitypub`);
 
   await expect(page.getByRole('heading', {name: 'ActivityPub reviews'})).toBeVisible();
-  await expect(page.getByText('Remote reply')).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Remote reply'})).toBeVisible();
   await expect(page.getByText('Remote reply for review')).toBeVisible();
   await expect(page.getByText('Remote image')).toBeVisible();
   await expect(page.getByText('IPFS source')).toBeVisible();
@@ -40,7 +40,7 @@ test('ActivityPub review UI accepts remote objects and creates a backed-up post 
   await expect(page.getByText('Default provenanceOnly; supported provenanceOnly, backupOnCreate')).toBeVisible();
   await saveShot(page, 'activitypub-review-desktop.png');
 
-  await page.getByRole('button', {name: 'Accept'}).click();
+  await page.getByRole('button', {name: 'Accept', exact: true}).click();
   await expect(page.getByText('Ready to create')).toBeVisible();
   await page.getByText('Back up supported attachments').click();
   await page.getByRole('button', {name: 'Create post'}).click();

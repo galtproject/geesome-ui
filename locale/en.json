@@ -10,6 +10,7 @@
       "file_explorer": "Files explorer",
       "boot_nodes": "Boot Nodes",
       "storage_space": "Storage space",
+      "activitypub_sources": "ActivityPub sources",
       "administration_groups": "Administrate groups",
       "followed_groups": "Followed groups"
     }

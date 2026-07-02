@@ -220,6 +220,45 @@ export default {
         ).catch(this.onError);
       },
 
+      adminResolveActivityPubSource(input: any = {}) {
+        return geesomeClient.postRequest('admin/activity-pub/sources/resolve', input).catch(this.onError);
+      },
+
+      adminGetActivityPubSourceSubscriptions(filters: any = {}) {
+        return geesomeClient.getRequest('admin/activity-pub/sources', {params: filters}).catch(this.onError);
+      },
+
+      adminSubscribeActivityPubSource(input: any = {}) {
+        return geesomeClient.postRequest('admin/activity-pub/sources', input).catch(this.onError);
+      },
+
+      adminUpdateActivityPubSourceSubscription(sourceId, input: any = {}) {
+        return geesomeClient.postRequest(
+          `admin/activity-pub/sources/${encodeURIComponent(sourceId)}/update`,
+          input
+        ).catch(this.onError);
+      },
+
+      adminRemoveActivityPubSourceSubscription(sourceId) {
+        return geesomeClient.postRequest(
+          `admin/activity-pub/sources/${encodeURIComponent(sourceId)}/remove`
+        ).catch(this.onError);
+      },
+
+      adminGetActivityPubSourceFeed(sourceId, filters: any = {}) {
+        return geesomeClient.getRequest(
+          `admin/activity-pub/sources/${encodeURIComponent(sourceId)}/feed`,
+          {params: filters}
+        ).catch(this.onError);
+      },
+
+      adminMarkActivityPubSourceRead(sourceId, input: any = {}) {
+        return geesomeClient.postRequest(
+          `admin/activity-pub/sources/${encodeURIComponent(sourceId)}/read`,
+          input
+        ).catch(this.onError);
+      },
+
       onProcess(process) {
         if(!process.percent) {
           return;

@@ -35,6 +35,7 @@ import NewUserInvite from "./pages/UsersSection/NewUser/NewUserInvite/NewUserInv
 import JoinByInvite from "./pages/UsersSection/JoinByInvite/JoinByInvite";
 import EditPassword from "./pages/UsersSection/UserProfile/EditPassword/EditPassword";
 import StorageSpacePage from "./pages/StorageSpacePage/StorageSpacePage";
+import ActivityPubSourcesPage from "./pages/ActivityPubSourcesPage/ActivityPubSourcesPage";
 
 Vue.use(Router);
 
@@ -110,6 +111,11 @@ export default new Router({
       path: '/storage-space',
       name: 'storage-space',
       component: StorageSpacePage
+    },
+    {
+      path: '/activitypub-sources',
+      name: 'activitypub-sources',
+      component: ActivityPubSourcesPage
     },
     {
       path: '/new-user',

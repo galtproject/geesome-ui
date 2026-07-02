@@ -7,6 +7,7 @@ import PinServices from '../../src/pages/UsersSection/UserProfile/PinServices/Pi
 import StorageSpacePage from '../../src/pages/StorageSpacePage/StorageSpacePage';
 import ContentManifestItem from '../../src/directives/ContentManifestItem/ContentManifestItem';
 import ActivityPubRemoteObjectsPage from '../../src/pages/GroupPage/ActivityPubRemoteObjectsPage/ActivityPubRemoteObjectsPage';
+import ActivityPubSourcesPage from '../../src/pages/ActivityPubSourcesPage/ActivityPubSourcesPage';
 import UploadContent from '../../src/directives/UploadContent/UploadContent';
 
 const calls: any[] = [];
@@ -212,6 +213,55 @@ const activityPubAttachmentPolicy = {
   canImportRemoteBytes: true,
   supportedModes: ['provenanceOnly', 'backupOnCreate']
 };
+const activityPubSourceActor = {
+  id: 11,
+  preferredUsername: 'bsky.app',
+  domain: 'bsky.brid.gy',
+  actorUrl: 'https://bsky.brid.gy/ap/bsky.app'
+};
+let activityPubSources = [
+  {
+    id: 601,
+    userId: 7,
+    remoteActorId: activityPubSourceActor.id,
+    displayName: '@bsky.app via Bridgy Fed',
+    sourceResource: 'acct:bsky.app@bsky.brid.gy',
+    sourceActorUrl: 'https://bsky.brid.gy/ap/bsky.app',
+    bridgeProvider: 'bridgy-bluesky',
+    status: 'active',
+    lastReadAt: null,
+    unreadCount: 1,
+    remoteActor: activityPubSourceActor
+  }
+];
+let activityPubSourceFeedItems = [
+  {
+    id: 701,
+    remoteActorId: activityPubSourceActor.id,
+    objectId: 'https://bsky.brid.gy/ap/bsky.app/post/abc',
+    objectType: 'Note',
+    visibility: 'public',
+    reviewState: 'pending',
+    isUnread: true,
+    publishedAt: '2026-06-02T12:00:00.000Z',
+    remoteActor: activityPubSourceActor,
+    preview: {
+      name: 'Bluesky update',
+      contentText: 'A new official Bluesky post bridged into ActivityPub.',
+      summaryText: 'Official Bluesky post',
+      url: 'https://bsky.app/profile/bsky.app/post/abc',
+      attachments: [
+        {
+          url: 'https://cdn.example/image.png',
+          mediaCategory: 'image',
+          mediaType: 'image/png',
+          name: 'Launch image',
+          embedPolicy: {mode: 'inlineMedia'}
+        }
+      ]
+    }
+  }
+];
 
 Vue.use(VueMaterial);
 Vue.component('upload-content', UploadContent);
@@ -387,6 +437,82 @@ Vue.prototype.$geesome = {
         }
       ] : []
     };
+  },
+  async adminResolveActivityPubSource(input) {
+    calls.push({type: 'adminResolveActivityPubSource', input});
+    return {
+      actor: activityPubSourceActor,
+      resource: input && (input.resource || input.handle || input.actorUrl)
+    };
+  },
+  async adminGetActivityPubSourceSubscriptions(filters) {
+    calls.push({type: 'adminGetActivityPubSourceSubscriptions', filters});
+    return {
+      list: activityPubSources.filter((source) => source.status !== 'removed'),
+      total: activityPubSources.filter((source) => source.status !== 'removed').length
+    };
+  },
+  async adminSubscribeActivityPubSource(input) {
+    calls.push({type: 'adminSubscribeActivityPubSource', input});
+    const existingSource = input && input.preset === 'bluesky-official'
+      ? activityPubSources.find((item) => item.sourceResource === 'acct:bsky.app@bsky.brid.gy')
+      : null;
+    if (existingSource) {
+      existingSource.displayName = input && input.displayName || existingSource.displayName;
+      existingSource.status = 'active';
+      return existingSource;
+    }
+
+    const source = {
+      id: 602,
+      userId: 7,
+      remoteActorId: activityPubSourceActor.id,
+      displayName: input && input.displayName || '@bsky.app via Bridgy Fed',
+      sourceResource: input && input.resource || input && input.handle || 'acct:bsky.app@bsky.brid.gy',
+      sourceActorUrl: input && input.actorUrl || 'https://bsky.brid.gy/ap/bsky.app',
+      bridgeProvider: input && input.bridgeProvider || 'bridgy-bluesky',
+      status: 'active',
+      lastReadAt: null,
+      unreadCount: 1,
+      remoteActor: activityPubSourceActor
+    };
+    activityPubSources = activityPubSources.filter((item) => Number(item.id) !== Number(source.id)).concat([source]);
+    return source;
+  },
+  async adminUpdateActivityPubSourceSubscription(sourceId, input) {
+    calls.push({type: 'adminUpdateActivityPubSourceSubscription', sourceId, input});
+    const source = activityPubSources.find((item) => Number(item.id) === Number(sourceId));
+    if (source && input && input.status) {
+      source.status = input.status;
+    }
+    return source;
+  },
+  async adminRemoveActivityPubSourceSubscription(sourceId) {
+    calls.push({type: 'adminRemoveActivityPubSourceSubscription', sourceId});
+    const source = activityPubSources.find((item) => Number(item.id) === Number(sourceId));
+    if (source) {
+      source.status = 'removed';
+    }
+    return {success: true};
+  },
+  async adminGetActivityPubSourceFeed(sourceId, filters) {
+    calls.push({type: 'adminGetActivityPubSourceFeed', sourceId, filters});
+    const source = activityPubSources.find((item) => Number(item.id) === Number(sourceId)) || activityPubSources[0];
+    return {
+      source,
+      list: activityPubSourceFeedItems,
+      total: activityPubSourceFeedItems.length
+    };
+  },
+  async adminMarkActivityPubSourceRead(sourceId, input) {
+    calls.push({type: 'adminMarkActivityPubSourceRead', sourceId, input});
+    activityPubSourceFeedItems = activityPubSourceFeedItems.map((item) => ({...item, isUnread: false}));
+    const source = activityPubSources.find((item) => Number(item.id) === Number(sourceId));
+    if (source) {
+      source.lastReadAt = '2026-06-02T12:30:00.000Z';
+      source.unreadCount = 0;
+    }
+    return source;
   }
 };
 
@@ -394,10 +520,11 @@ Vue.prototype.$geesome = {
 (window as any).__STORAGE_SPACE_E2E__ = {calls};
 (window as any).__POST_HTML_SAFETY_E2E__ = {calls};
 (window as any).__ACTIVITYPUB_REVIEW_E2E__ = {calls, activityPubRemoteObjects};
+(window as any).__ACTIVITYPUB_SOURCES_E2E__ = {calls, activityPubSources, activityPubSourceFeedItems};
 
 new Vue({
   el: '#app',
-  components: {PinServices, PostItem, StorageSpacePage, ActivityPubRemoteObjectsPage},
+  components: {PinServices, PostItem, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage},
   data() {
     return {
       currentPage: getCurrentPage(),
@@ -418,6 +545,7 @@ new Vue({
         <post-item :value="postFixture" :group="postFixtureGroup" />
       </section>
       <storage-space-page v-else-if="currentPage === 'storage-space'" />
+      <activity-pub-sources-page v-else-if="currentPage === 'activitypub-sources'" />
       <activity-pub-remote-objects-page v-else-if="currentPage === 'activitypub'" :group="activityPubGroup" />
       <pin-services v-else />
     </main>
@@ -433,6 +561,9 @@ function getCurrentPage() {
   }
   if (window.location.hash === '#activitypub') {
     return 'activitypub';
+  }
+  if (window.location.hash === '#activitypub-sources') {
+    return 'activitypub-sources';
   }
   return 'pin-services';
 }

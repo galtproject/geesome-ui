@@ -106,6 +106,39 @@
     }
   }
 
+  .activitypub-sources-page {
+    .activitypub-sources-title,
+    .activitypub-source-feed-header,
+    .activitypub-feed-item-header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .activitypub-sources-subscribe,
+    .activitypub-sources-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .activitypub-source-list-item {
+      grid-template-columns: 40px minmax(0, 1fr);
+
+      .activitypub-source-list-side {
+        align-items: flex-start;
+        grid-column: 2;
+      }
+    }
+
+    .activitypub-source-feed-actions {
+      align-items: stretch;
+      flex-direction: column;
+
+      .md-button {
+        margin-left: 0;
+        margin-right: 0;
+      }
+    }
+  }
+
   .wide-content {
     width: 100%;
   }
