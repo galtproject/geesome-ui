@@ -89,6 +89,23 @@
     }
   }
 
+  .activitypub-review-page {
+    .activitypub-review-title,
+    .activitypub-review-detail-header,
+    .activitypub-review-actions {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .activitypub-review-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .activitypub-review-list-item {
+      min-height: auto;
+    }
+  }
+
   .wide-content {
     width: 100%;
   }

@@ -187,6 +187,39 @@ export default {
         return geesomeClient.postRequest('admin/storage-space/availability-network-samples/refresh', listParams).catch(this.onError);
       },
 
+      adminGetActivityPubRemoteObjects(groupName, filters: any = {}) {
+        return geesomeClient.getRequest(
+          `admin/activity-pub/groups/${encodeURIComponent(groupName)}/remote-objects`,
+          {params: filters}
+        ).catch(this.onError);
+      },
+
+      adminGetActivityPubRemoteObject(groupName, remoteObjectId) {
+        return geesomeClient.getRequest(
+          `admin/activity-pub/groups/${encodeURIComponent(groupName)}/remote-objects/${encodeURIComponent(remoteObjectId)}`
+        ).catch(this.onError);
+      },
+
+      adminGetActivityPubRemoteObjectPostDraft(groupName, remoteObjectId) {
+        return geesomeClient.getRequest(
+          `admin/activity-pub/groups/${encodeURIComponent(groupName)}/remote-objects/${encodeURIComponent(remoteObjectId)}/post-draft`
+        ).catch(this.onError);
+      },
+
+      adminSetActivityPubRemoteObjectReviewState(groupName, remoteObjectId, input) {
+        return geesomeClient.postRequest(
+          `admin/activity-pub/groups/${encodeURIComponent(groupName)}/remote-objects/${encodeURIComponent(remoteObjectId)}/review-state`,
+          input
+        ).catch(this.onError);
+      },
+
+      adminCreateActivityPubRemoteObjectPost(groupName, remoteObjectId, options: any = {}) {
+        return geesomeClient.postRequest(
+          `admin/activity-pub/groups/${encodeURIComponent(groupName)}/remote-objects/${encodeURIComponent(remoteObjectId)}/post`,
+          options
+        ).catch(this.onError);
+      },
+
       onProcess(process) {
         if(!process.percent) {
           return;
