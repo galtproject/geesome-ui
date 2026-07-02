@@ -117,6 +117,140 @@ a.icon-link {
   margin-top: 30px;
 }
 
+.activitypub-review-page {
+  .activitypub-review-title,
+  .activitypub-review-detail-header,
+  .activitypub-review-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .activitypub-review-heading,
+  .activitypub-review-detail h2,
+  .activitypub-review-detail h3 {
+    margin: 0;
+  }
+
+  .activitypub-review-tabs {
+    padding-top: 0;
+  }
+
+  .activitypub-review-layout {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .activitypub-review-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .activitypub-review-list-item {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #211d27;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 76px;
+    padding: 10px;
+    text-align: left;
+    width: 100%;
+
+    &.active {
+      border-color: #9c27b0;
+      background: #302138;
+    }
+
+    strong,
+    small {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .activitypub-review-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .activitypub-review-preview,
+  .activitypub-review-attachments,
+  .activitypub-review-policy,
+  .activitypub-review-state {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 12px;
+  }
+
+  .activitypub-review-preview-text {
+    margin-top: 8px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .activitypub-review-muted,
+  .activitypub-review-empty,
+  .activitypub-review-error,
+  .activitypub-review-success,
+  .activitypub-attachment small {
+    display: block;
+    overflow-wrap: anywhere;
+  }
+
+  .activitypub-review-muted {
+    color: #bdbdbd;
+  }
+
+  .activitypub-review-error {
+    color: #ff8a80;
+    margin-bottom: 12px;
+  }
+
+  .activitypub-review-success {
+    color: #69f0ae;
+    margin-top: 8px;
+  }
+
+  .activitypub-review-badge,
+  .activitypub-attachment {
+    border-radius: 4px;
+  }
+
+  .activitypub-review-badge.review-pending,
+  .activitypub-review-badge.review-accepted,
+  .activitypub-review-badge.review-rejected {
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 7px;
+    text-transform: uppercase;
+  }
+
+  .review-pending {
+    background: #424242;
+  }
+
+  .review-accepted {
+    background: #1b5e20;
+  }
+
+  .review-rejected {
+    background: #8e2424;
+  }
+
+  .activitypub-attachment {
+    background: #211d27;
+    margin-top: 8px;
+    padding: 8px;
+  }
+}
+
 .md-app-content {
   .new-post-card {
     margin-right: 0;

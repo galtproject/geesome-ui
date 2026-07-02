@@ -48,7 +48,11 @@ export default {
     }
   },
 
-  computed: {},
+  computed: {
+    haveAdminReadPermission() {
+      return this.$store.state.haveAdminReadPermission;
+    }
+  },
   data() {
     return {
       isCanEditGroup: false,

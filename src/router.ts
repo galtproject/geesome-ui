@@ -13,6 +13,7 @@ import GroupPage from "./pages/GroupPage/GroupPage";
 import LoginPage from "./pages/LoginPage/LoginPage";
 import GroupLayout from "./pages/GroupPage/GroupLayout/GroupLayout";
 import GroupPostPage from "./pages/GroupPage/GroupPostPage/GroupPostPage";
+import ActivityPubRemoteObjectsPage from "./pages/GroupPage/ActivityPubRemoteObjectsPage/ActivityPubRemoteObjectsPage";
 import NewGroup from "./pages/GroupPage/NewGroup/NewGroup";
 import NewUser from "./pages/UsersSection/NewUser/NewUser";
 import FileExplorerPage from "./pages/FileExplorerPage/FileExplorerPage";
@@ -166,6 +167,11 @@ export default new Router({
           path: ':groupId',
           name: 'group-page',
           component: GroupPage
+        },
+        {
+          path: ':groupId/activitypub',
+          name: 'group-activitypub-review',
+          component: ActivityPubRemoteObjectsPage
         },
         {
           path: ':groupId/posts/:postId',
