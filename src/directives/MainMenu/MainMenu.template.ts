@@ -41,6 +41,11 @@ module.exports = `
       <span class="md-list-item-text" v-locale="localeKey + '.activitypub_sources'"></span>
     </md-list-item>
 
+    <md-list-item :to="{name: 'bluesky-sources'}" v-if="haveAdminReadPermission">
+      <md-icon class="fas fa-cloud"></md-icon>
+      <span class="md-list-item-text" v-locale="localeKey + '.bluesky_sources'"></span>
+    </md-list-item>
+
     <md-list-item :to="{name: 'admined-groups'}" v-if="user">
       <md-icon class="fas fa-users-cog"></md-icon>
       <span class="md-list-item-text" v-locale="localeKey + '.administration_groups'"></span>

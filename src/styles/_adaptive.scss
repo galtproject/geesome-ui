@@ -139,6 +139,13 @@
     }
   }
 
+  .bluesky-sources-page {
+    .bluesky-sources-subscribe,
+    .bluesky-rule-builder {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .wide-content {
     width: 100%;
   }

@@ -8,6 +8,7 @@ import StorageSpacePage from '../../src/pages/StorageSpacePage/StorageSpacePage'
 import ContentManifestItem from '../../src/directives/ContentManifestItem/ContentManifestItem';
 import ActivityPubRemoteObjectsPage from '../../src/pages/GroupPage/ActivityPubRemoteObjectsPage/ActivityPubRemoteObjectsPage';
 import ActivityPubSourcesPage from '../../src/pages/ActivityPubSourcesPage/ActivityPubSourcesPage';
+import BlueskySourcesPage from '../../src/pages/BlueskySourcesPage/BlueskySourcesPage';
 import UploadContent from '../../src/directives/UploadContent/UploadContent';
 
 const calls: any[] = [];
@@ -262,6 +263,44 @@ let activityPubSourceFeedItems = [
     }
   }
 ];
+let blueskySources = [
+  {
+    id: 801,
+    userId: 7,
+    actor: 'bsky.app',
+    filter: 'posts_no_replies',
+    displayName: '@bsky.app',
+    status: 'active',
+    groupName: 'bluesky-bsky-app',
+    importLimit: 20,
+    moderationMode: 'autoImport',
+    moderationRules: [
+      {name: 'spam', type: 'keyword', field: 'text', action: 'block', value: 'spam'}
+    ],
+    dbChannelId: 33,
+    lastCursor: 'cursor-1',
+    lastRefreshRequestedAt: '2026-06-03T09:00:00.000Z',
+    lastImportedAt: '2026-06-03T09:00:00.000Z',
+    lastError: null
+  }
+];
+let blueskyFeedItems = [
+  {
+    id: 901,
+    title: 'Native Bluesky launch',
+    status: 'published',
+    source: 'socNetImport:bluesky',
+    sourceChannelId: 'did:plc:bsky',
+    sourcePostId: 'at://did:plc:bsky/app.bsky.feed.post/abc',
+    publishedAt: '2026-06-03T09:00:00.000Z',
+    propertiesJson: {
+      bluesky: {
+        text: 'Native ATProto post imported into GeeSome.',
+        url: 'https://bsky.app/profile/bsky.app/post/abc'
+      }
+    }
+  }
+];
 
 Vue.use(VueMaterial);
 Vue.component('upload-content', UploadContent);
@@ -513,6 +552,113 @@ Vue.prototype.$geesome = {
       source.unreadCount = 0;
     }
     return source;
+  },
+  async adminGetBlueskySourceSubscriptions(filters) {
+    calls.push({type: 'adminGetBlueskySourceSubscriptions', filters});
+    const list = blueskySources.filter((source) => source.status !== 'removed');
+    return {list, total: list.length};
+  },
+  async adminSubscribeBlueskySource(input) {
+    calls.push({type: 'adminSubscribeBlueskySource', input});
+    const actor = input && input.actor || 'bsky.app';
+    const existingSource = blueskySources.find((item) => item.actor === actor);
+    if (existingSource) {
+      existingSource.displayName = input && input.displayName || existingSource.displayName;
+      existingSource.filter = input && input.filter || existingSource.filter;
+      existingSource.groupName = input && input.groupName || existingSource.groupName;
+      existingSource.importLimit = input && input.importLimit || existingSource.importLimit;
+      existingSource.moderationMode = input && input.moderationMode || existingSource.moderationMode;
+      existingSource.moderationRules = input && input.moderationRules || existingSource.moderationRules;
+      existingSource.status = 'active';
+      return existingSource;
+    }
+
+    const source = {
+      id: 802,
+      userId: 7,
+      actor,
+      filter: input && input.filter || 'posts_no_replies',
+      displayName: input && input.displayName || actor,
+      status: 'active',
+      groupName: input && input.groupName || '',
+      importLimit: input && input.importLimit || 20,
+      moderationMode: input && input.moderationMode || 'autoImport',
+      moderationRules: input && input.moderationRules || [],
+      dbChannelId: null,
+      lastCursor: null,
+      lastRefreshRequestedAt: null,
+      lastImportedAt: null,
+      lastError: null
+    };
+    blueskySources = blueskySources.concat([source]);
+    return source;
+  },
+  async adminUpdateBlueskySourceSubscription(sourceId, input) {
+    calls.push({type: 'adminUpdateBlueskySourceSubscription', sourceId, input});
+    const source = blueskySources.find((item) => Number(item.id) === Number(sourceId));
+    if (source && input && input.status) {
+      source.status = input.status;
+    }
+    return source;
+  },
+  async adminRemoveBlueskySourceSubscription(sourceId) {
+    calls.push({type: 'adminRemoveBlueskySourceSubscription', sourceId});
+    const source = blueskySources.find((item) => Number(item.id) === Number(sourceId));
+    if (source) {
+      source.status = 'removed';
+    }
+    return {success: true};
+  },
+  async adminGetBlueskySourceFeed(sourceId, filters) {
+    calls.push({type: 'adminGetBlueskySourceFeed', sourceId, filters});
+    const source = blueskySources.find((item) => Number(item.id) === Number(sourceId)) || blueskySources[0];
+    return {
+      source,
+      dbChannel: {
+        id: 33,
+        groupId: 31,
+        channelId: 'did:plc:bsky',
+        title: '@bsky.app',
+        socNet: 'bluesky'
+      },
+      posts: {
+        list: blueskyFeedItems,
+        total: blueskyFeedItems.length
+      }
+    };
+  },
+  async adminRefreshBlueskySourceSubscription(sourceId, input) {
+    calls.push({type: 'adminRefreshBlueskySourceSubscription', sourceId, input});
+    const source = blueskySources.find((item) => Number(item.id) === Number(sourceId));
+    if (source) {
+      source.dbChannelId = 33;
+      source.lastRefreshRequestedAt = '2026-06-03T09:30:00.000Z';
+      source.lastImportedAt = '2026-06-03T09:30:00.000Z';
+      source.lastCursor = 'cursor-2';
+      source.lastError = null;
+    }
+    return {
+      source,
+      actor: source && source.actor,
+      cursor: 'cursor-2',
+      fetched: 2,
+      imported: 1,
+      moderation: {accepted: 1, blocked: 1},
+      dbChannel: {id: 33, groupId: 31, channelId: 'did:plc:bsky', title: '@bsky.app', socNet: 'bluesky'}
+    };
+  },
+  async adminSyncBlueskySourcePosts(sourceId, input) {
+    calls.push({type: 'adminSyncBlueskySourcePosts', sourceId, input});
+    const source = blueskySources.find((item) => Number(item.id) === Number(sourceId));
+    return {
+      source,
+      checked: 1,
+      updated: 1,
+      deleted: 0,
+      skipped: 0,
+      failed: 0,
+      errors: []
+    };
   }
 };
 
@@ -521,10 +667,11 @@ Vue.prototype.$geesome = {
 (window as any).__POST_HTML_SAFETY_E2E__ = {calls};
 (window as any).__ACTIVITYPUB_REVIEW_E2E__ = {calls, activityPubRemoteObjects};
 (window as any).__ACTIVITYPUB_SOURCES_E2E__ = {calls, activityPubSources, activityPubSourceFeedItems};
+(window as any).__BLUESKY_SOURCES_E2E__ = {calls, blueskySources, blueskyFeedItems};
 
 new Vue({
   el: '#app',
-  components: {PinServices, PostItem, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage},
+  components: {PinServices, PostItem, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage},
   data() {
     return {
       currentPage: getCurrentPage(),
@@ -546,6 +693,7 @@ new Vue({
       </section>
       <storage-space-page v-else-if="currentPage === 'storage-space'" />
       <activity-pub-sources-page v-else-if="currentPage === 'activitypub-sources'" />
+      <bluesky-sources-page v-else-if="currentPage === 'bluesky-sources'" />
       <activity-pub-remote-objects-page v-else-if="currentPage === 'activitypub'" :group="activityPubGroup" />
       <pin-services v-else />
     </main>
@@ -564,6 +712,9 @@ function getCurrentPage() {
   }
   if (window.location.hash === '#activitypub-sources') {
     return 'activitypub-sources';
+  }
+  if (window.location.hash === '#bluesky-sources') {
+    return 'bluesky-sources';
   }
   return 'pin-services';
 }

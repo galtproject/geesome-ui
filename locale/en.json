@@ -11,6 +11,7 @@
       "boot_nodes": "Boot Nodes",
       "storage_space": "Storage space",
       "activitypub_sources": "ActivityPub sources",
+      "bluesky_sources": "Bluesky sources",
       "administration_groups": "Administrate groups",
       "followed_groups": "Followed groups"
     }

@@ -259,6 +259,48 @@ export default {
         ).catch(this.onError);
       },
 
+      adminGetBlueskySourceSubscriptions(filters: any = {}) {
+        return geesomeClient.getRequest('admin/bluesky/sources', {params: filters}).catch(this.onError);
+      },
+
+      adminSubscribeBlueskySource(input: any = {}) {
+        return geesomeClient.postRequest('admin/bluesky/sources', input).catch(this.onError);
+      },
+
+      adminUpdateBlueskySourceSubscription(sourceId, input: any = {}) {
+        return geesomeClient.postRequest(
+          `admin/bluesky/sources/${encodeURIComponent(sourceId)}/update`,
+          input
+        ).catch(this.onError);
+      },
+
+      adminRemoveBlueskySourceSubscription(sourceId) {
+        return geesomeClient.postRequest(
+          `admin/bluesky/sources/${encodeURIComponent(sourceId)}/remove`
+        ).catch(this.onError);
+      },
+
+      adminGetBlueskySourceFeed(sourceId, filters: any = {}) {
+        return geesomeClient.getRequest(
+          `admin/bluesky/sources/${encodeURIComponent(sourceId)}/feed`,
+          {params: filters}
+        ).catch(this.onError);
+      },
+
+      adminRefreshBlueskySourceSubscription(sourceId, input: any = {}) {
+        return geesomeClient.postRequest(
+          `admin/bluesky/sources/${encodeURIComponent(sourceId)}/refresh`,
+          input
+        ).catch(this.onError);
+      },
+
+      adminSyncBlueskySourcePosts(sourceId, input: any = {}) {
+        return geesomeClient.postRequest(
+          `admin/bluesky/sources/${encodeURIComponent(sourceId)}/sync`,
+          input
+        ).catch(this.onError);
+      },
+
       onProcess(process) {
         if(!process.percent) {
           return;
