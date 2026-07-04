@@ -301,6 +301,35 @@ export default {
         ).catch(this.onError);
       },
 
+      userBlueskyLogin(input: any = {}) {
+        return geesomeClient.postRequest('soc-net/bluesky/login', input).catch(this.onError);
+      },
+
+      userBlueskyVerifyAccount(input: any = {}) {
+        return geesomeClient.postRequest('soc-net/bluesky/verify-account', input).catch(this.onError);
+      },
+
+      userBlueskyCrossPost(postId, input: any = {}) {
+        return geesomeClient.postRequest(
+          `soc-net/bluesky/posts/${encodeURIComponent(postId)}/cross-post`,
+          input
+        ).catch(this.onError);
+      },
+
+      userBlueskyUpdateCrossPost(postId, input: any = {}) {
+        return geesomeClient.postRequest(
+          `soc-net/bluesky/posts/${encodeURIComponent(postId)}/update-cross-post`,
+          input
+        ).catch(this.onError);
+      },
+
+      userBlueskyDeleteCrossPost(postId, input: any = {}) {
+        return geesomeClient.postRequest(
+          `soc-net/bluesky/posts/${encodeURIComponent(postId)}/delete-cross-post`,
+          input
+        ).catch(this.onError);
+      },
+
       onProcess(process) {
         if(!process.percent) {
           return;

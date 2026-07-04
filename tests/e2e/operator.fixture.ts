@@ -148,6 +148,33 @@ const postFixture = {
     }
   }]
 };
+const blueskyCrossPostAccount = {
+  id: 41,
+  userId: 7,
+  socNet: 'bluesky',
+  accountId: 'did:plc:artist',
+  username: 'artist.bsky.social',
+  fullName: '@artist.bsky.social',
+  hasApiKey: true,
+  isEncrypted: true
+};
+const blueskyPostFixture = {
+  id: 8,
+  localId: 8,
+  groupId: postFixtureGroup.staticId,
+  manifestId: 'bafy-bluesky-post-manifest',
+  publishedAt: 1767225600,
+  propertiesJson: {},
+  contents: [{
+    position: 0,
+    view: 'contents',
+    storageId: {
+      storageId: 'bafy-post-text',
+      mimeType: 'text/html',
+      extension: 'html'
+    }
+  }]
+};
 const activityPubGroup = {
   id: 31,
   name: 'test-channel',
@@ -329,6 +356,10 @@ Vue.prototype.$geesome = {
   async adminIsHaveCorePermission(permissionName) {
     calls.push({type: 'adminIsHaveCorePermission', permissionName});
     return permissionName === 'admin:all' || permissionName === 'admin:read';
+  },
+  async socNetDbAccountList(params) {
+    calls.push({type: 'socNetDbAccountList', params});
+    return {list: [blueskyCrossPostAccount]};
   },
   async getUserPinAccounts() {
     calls.push({type: 'getUserPinAccounts'});
@@ -659,6 +690,55 @@ Vue.prototype.$geesome = {
       failed: 0,
       errors: []
     };
+  },
+  async userBlueskyCrossPost(postId, input) {
+    calls.push({type: 'userBlueskyCrossPost', postId, input});
+    return {
+      account: blueskyCrossPostAccount,
+      did: blueskyCrossPostAccount.accountId,
+      handle: blueskyCrossPostAccount.username,
+      post: {id: postId, groupId: postFixtureGroup.staticId, status: 'published'},
+      record: {
+        uri: 'at://did:plc:artist/app.bsky.feed.post/abc',
+        cid: 'bafy-cross-post'
+      },
+      alreadyExists: false
+    };
+  },
+  async userBlueskyUpdateCrossPost(postId, input) {
+    calls.push({type: 'userBlueskyUpdateCrossPost', postId, input});
+    return {
+      account: blueskyCrossPostAccount,
+      did: blueskyCrossPostAccount.accountId,
+      handle: blueskyCrossPostAccount.username,
+      post: {id: postId, groupId: postFixtureGroup.staticId, status: 'published'},
+      record: {
+        uri: 'at://did:plc:artist/app.bsky.feed.post/abc',
+        cid: 'bafy-cross-post-updated'
+      },
+      previousRecord: {
+        uri: 'at://did:plc:artist/app.bsky.feed.post/abc',
+        cid: 'bafy-cross-post'
+      },
+      updated: true
+    };
+  },
+  async userBlueskyDeleteCrossPost(postId, input) {
+    calls.push({type: 'userBlueskyDeleteCrossPost', postId, input});
+    return {
+      account: blueskyCrossPostAccount,
+      did: blueskyCrossPostAccount.accountId,
+      handle: blueskyCrossPostAccount.username,
+      post: {id: postId, groupId: postFixtureGroup.staticId, status: 'published'},
+      record: {
+        uri: 'at://did:plc:artist/app.bsky.feed.post/abc',
+        cid: 'bafy-cross-post-updated'
+      },
+      deleteRecord: {
+        deleted: true,
+        alreadyDeleted: false
+      }
+    };
   }
 };
 
@@ -668,6 +748,7 @@ Vue.prototype.$geesome = {
 (window as any).__ACTIVITYPUB_REVIEW_E2E__ = {calls, activityPubRemoteObjects};
 (window as any).__ACTIVITYPUB_SOURCES_E2E__ = {calls, activityPubSources, activityPubSourceFeedItems};
 (window as any).__BLUESKY_SOURCES_E2E__ = {calls, blueskySources, blueskyFeedItems};
+(window as any).__BLUESKY_POST_ACTIONS_E2E__ = {calls, blueskyCrossPostAccount, blueskyPostFixture};
 
 new Vue({
   el: '#app',
@@ -676,6 +757,7 @@ new Vue({
     return {
       currentPage: getCurrentPage(),
       postFixture,
+      blueskyPostFixture,
       postFixtureGroup,
       activityPubGroup
     };
@@ -690,6 +772,10 @@ new Vue({
       <section v-if="currentPage === 'post-html-safety'" aria-label="Post HTML safety fixture">
         <h1>Post HTML safety</h1>
         <post-item :value="postFixture" :group="postFixtureGroup" />
+      </section>
+      <section v-else-if="currentPage === 'bluesky-post-actions'" aria-label="Bluesky post actions fixture">
+        <h1>Bluesky post actions</h1>
+        <post-item :value="blueskyPostFixture" :group="postFixtureGroup" :show-bluesky-controls="true" />
       </section>
       <storage-space-page v-else-if="currentPage === 'storage-space'" />
       <activity-pub-sources-page v-else-if="currentPage === 'activitypub-sources'" />
@@ -706,6 +792,9 @@ function getCurrentPage() {
   }
   if (window.location.hash === '#post-html-safety') {
     return 'post-html-safety';
+  }
+  if (window.location.hash === '#bluesky-post-actions') {
+    return 'bluesky-post-actions';
   }
   if (window.location.hash === '#activitypub') {
     return 'activitypub';

@@ -146,6 +146,16 @@
     }
   }
 
+  .bluesky-cross-post-form {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+
+    .md-button {
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+
   .wide-content {
     width: 100%;
   }

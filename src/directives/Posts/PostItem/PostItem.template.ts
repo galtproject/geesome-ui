@@ -20,9 +20,50 @@ module.exports = `
     <content-manifest-item :manifest="content.storageId" v-if="content.view !== 'link'"></content-manifest-item>
   </md-card-content>
 
-  <!--<md-card-actions>-->
-  <!--<md-button>Action</md-button>-->
-  <!--<md-button>Action</md-button>-->
-  <!--</md-card-actions>-->
+  <md-card-actions class="bluesky-cross-post-controls" v-if="showBlueskyControls">
+    <div class="bluesky-cross-post-content">
+      <md-progress-bar md-mode="indeterminate" v-if="blueskyLoadingAccounts || blueskyActionLoading"></md-progress-bar>
+
+      <div class="bluesky-cross-post-empty" v-if="!blueskyLoadingAccounts && !hasBlueskyAccounts">
+        No Bluesky account connected
+      </div>
+
+      <div class="bluesky-cross-post-form" v-if="hasBlueskyAccounts">
+        <md-field>
+          <label>Bluesky account</label>
+          <md-select v-model="selectedBlueskyAccountId" :disabled="blueskyActionLoading">
+            <md-option v-for="account in blueskyAccounts" :key="account.id" :value="account.id">
+              {{getBlueskyAccountLabel(account)}}
+            </md-option>
+          </md-select>
+        </md-field>
+
+        <md-field v-if="selectedBlueskyAccount && selectedBlueskyAccount.isEncrypted">
+          <label>App password</label>
+          <md-input v-model="blueskyAppPassword" type="password" :disabled="blueskyActionLoading"></md-input>
+        </md-field>
+
+        <a class="bluesky-cross-post-link" v-if="selectedBlueskyRecordUrl" :href="selectedBlueskyRecordUrl" target="_blank" rel="noopener noreferrer">
+          Open Bluesky post
+        </a>
+
+        <md-button class="md-primary" v-if="!selectedBlueskyRecord" @click="crossPostToBluesky" :disabled="blueskyActionDisabled">
+          <md-icon class="fas fa-share"></md-icon>
+          <span>Post to Bluesky</span>
+        </md-button>
+        <md-button class="md-primary" v-if="selectedBlueskyRecord" @click="updateBlueskyCrossPost" :disabled="blueskyActionDisabled">
+          <md-icon class="fas fa-sync-alt"></md-icon>
+          <span>Update Bluesky</span>
+        </md-button>
+        <md-button class="md-warn" v-if="selectedBlueskyRecord" @click="deleteBlueskyCrossPost" :disabled="blueskyActionDisabled">
+          <md-icon class="fas fa-trash"></md-icon>
+          <span>Delete Bluesky</span>
+        </md-button>
+      </div>
+
+      <div class="bluesky-cross-post-error" v-if="blueskyErrorMessage">{{blueskyErrorMessage}}</div>
+      <div class="bluesky-cross-post-success" v-if="blueskySuccessMessage">{{blueskySuccessMessage}}</div>
+    </div>
+  </md-card-actions>
 </md-card>
 `;

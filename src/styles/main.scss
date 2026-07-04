@@ -489,6 +489,50 @@ a.icon-link {
   }
 }
 
+.bluesky-cross-post-controls {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 16px 16px;
+}
+
+.bluesky-cross-post-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.bluesky-cross-post-form {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(180px, 260px) minmax(180px, 260px) auto auto auto;
+  width: 100%;
+}
+
+.bluesky-cross-post-link,
+.bluesky-cross-post-empty,
+.bluesky-cross-post-error,
+.bluesky-cross-post-success {
+  overflow-wrap: anywhere;
+}
+
+.bluesky-cross-post-link {
+  color: #ffb74d;
+  padding-bottom: 10px;
+}
+
+.bluesky-cross-post-empty {
+  color: #bdbdbd;
+}
+
+.bluesky-cross-post-error {
+  color: #ff8a80;
+}
+
+.bluesky-cross-post-success {
+  color: #69f0ae;
+}
+
 .upload-content {
   .md-layout {
     justify-content: center;
