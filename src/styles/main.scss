@@ -389,6 +389,7 @@ a.icon-link {
   }
 
   .activitypub-source-status.status-active,
+  .activitypub-source-status.status-published,
   .activitypub-feed-state.review-accepted {
     background: #1b5e20;
   }
@@ -398,6 +399,7 @@ a.icon-link {
   }
 
   .activitypub-source-status.status-removed,
+  .activitypub-source-status.status-deleted,
   .activitypub-feed-state.review-rejected {
     background: #8e2424;
   }
@@ -433,6 +435,47 @@ a.icon-link {
   .activitypub-source-attachment {
     background: #19161c;
     padding: 8px;
+  }
+}
+
+.bluesky-sources-page {
+  .bluesky-sources-subscribe,
+  .bluesky-rule-builder {
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+  }
+
+  .bluesky-rule-builder {
+    display: grid;
+    gap: 12px;
+    align-items: end;
+    grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(140px, 180px)) auto;
+    margin-top: 12px;
+  }
+
+  .bluesky-rules-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .bluesky-rule-chip {
+    align-items: center;
+    background: #19161c;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    display: inline-flex;
+    gap: 4px;
+    min-width: 0;
+    padding: 4px 4px 4px 8px;
+
+    span {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .bluesky-source-avatar {
+    background: #01579b;
   }
 }
 
