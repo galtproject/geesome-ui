@@ -477,6 +477,42 @@ a.icon-link {
   .bluesky-source-avatar {
     background: #01579b;
   }
+
+  .bluesky-review-panel {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 12px;
+  }
+
+  .bluesky-review-controls {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .bluesky-review-state-field {
+    margin: 0;
+    min-width: 170px;
+  }
+
+  .bluesky-review-actions {
+    margin-top: 2px;
+  }
+
+  .activitypub-feed-state.review-imported {
+    background: #1b5e20;
+  }
+
+  .activitypub-feed-state.review-quarantined {
+    background: #5d4037;
+  }
+
+  .activitypub-feed-state.review-blocked {
+    background: #8e2424;
+  }
 }
 
 .md-app-content {

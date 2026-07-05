@@ -331,6 +331,52 @@ let blueskyFeedItems = [
     }
   }
 ];
+let blueskyReviewItems = [
+  {
+    id: 951,
+    userId: 7,
+    sourceSubscriptionId: 801,
+    actor: 'bsky.app',
+    uri: 'at://did:plc:bsky/app.bsky.feed.post/review1',
+    cid: 'bafy-review-1',
+    sourceChannelId: 'did:plc:bsky',
+    state: 'pending',
+    moderationAction: 'review',
+    moderationDecision: {reason: 'reviewFirst'},
+    preview: {
+      name: 'Review this Bluesky post',
+      contentText: 'Review-first Bluesky post waiting for import.',
+      url: 'https://bsky.app/profile/bsky.app/post/review1'
+    },
+    publishedAt: '2026-06-03T09:05:00.000Z',
+    importedAt: null,
+    reviewedAt: null,
+    reviewedByUserId: null,
+    lastError: null
+  },
+  {
+    id: 952,
+    userId: 7,
+    sourceSubscriptionId: 801,
+    actor: 'bsky.app',
+    uri: 'at://did:plc:bsky/app.bsky.feed.post/review2',
+    cid: 'bafy-review-2',
+    sourceChannelId: 'did:plc:bsky',
+    state: 'quarantined',
+    moderationAction: 'quarantine',
+    moderationDecision: {reason: 'keyword: giveaway spam'},
+    preview: {
+      name: 'Quarantined Bluesky post',
+      contentText: 'Quarantined Bluesky post waiting for admin decision.',
+      url: 'https://bsky.app/profile/bsky.app/post/review2'
+    },
+    publishedAt: '2026-06-03T09:10:00.000Z',
+    importedAt: null,
+    reviewedAt: null,
+    reviewedByUserId: null,
+    lastError: null
+  }
+];
 
 Vue.use(VueMaterial);
 Vue.component('upload-content', UploadContent);
@@ -708,6 +754,65 @@ Vue.prototype.$geesome = {
       }
     };
   },
+  async adminGetBlueskySourceReviews(sourceId, filters) {
+    calls.push({type: 'adminGetBlueskySourceReviews', sourceId, filters});
+    const source = blueskySources.find((item) => Number(item.id) === Number(sourceId)) || blueskySources[0];
+    let list = blueskyReviewItems.filter((item) => Number(item.sourceSubscriptionId) === Number(sourceId));
+    if (filters && filters.state) {
+      list = list.filter((item) => item.state === filters.state);
+    } else {
+      list = list.filter((item) => item.state !== 'imported' && item.state !== 'rejected');
+    }
+    return {
+      source,
+      list,
+      total: list.length
+    };
+  },
+  async adminUpdateBlueskySourceReviewState(sourceId, reviewId, input) {
+    calls.push({type: 'adminUpdateBlueskySourceReviewState', sourceId, reviewId, input});
+    const review = blueskyReviewItems.find((item) => Number(item.id) === Number(reviewId));
+    if (review && input && input.state) {
+      review.state = input.state;
+      review.reviewedAt = input.state === 'pending' ? null : '2026-06-03T09:20:00.000Z';
+      review.reviewedByUserId = input.state === 'pending' ? null : 7;
+    }
+    return review;
+  },
+  async adminImportBlueskySourceReview(sourceId, reviewId, input) {
+    calls.push({type: 'adminImportBlueskySourceReview', sourceId, reviewId, input});
+    const source = blueskySources.find((item) => Number(item.id) === Number(sourceId)) || blueskySources[0];
+    const review = blueskyReviewItems.find((item) => Number(item.id) === Number(reviewId));
+    if (review) {
+      review.state = 'imported';
+      review.importedAt = '2026-06-03T09:25:00.000Z';
+      review.reviewedAt = '2026-06-03T09:25:00.000Z';
+      review.reviewedByUserId = 7;
+      if (!blueskyFeedItems.find((item) => item.sourcePostId === review.uri)) {
+        blueskyFeedItems = blueskyFeedItems.concat([{
+          id: 902,
+          title: review.preview && review.preview.name,
+          status: 'published',
+          source: 'socNetImport:bluesky',
+          sourceChannelId: review.sourceChannelId,
+          sourcePostId: review.uri,
+          publishedAt: review.publishedAt,
+          propertiesJson: {
+            bluesky: {
+              text: 'Imported from review queue.',
+              url: review.preview && review.preview.url
+            }
+          }
+        }]);
+      }
+    }
+    return {
+      source,
+      review,
+      dbChannel: {id: 33, groupId: 31, channelId: 'did:plc:bsky', title: '@bsky.app', socNet: 'bluesky'},
+      imported: review ? 1 : 0
+    };
+  },
   async adminRefreshBlueskySourceSubscription(sourceId, input) {
     calls.push({type: 'adminRefreshBlueskySourceSubscription', sourceId, input});
     const source = blueskySources.find((item) => Number(item.id) === Number(sourceId));
@@ -797,7 +902,7 @@ Vue.prototype.$geesome = {
 (window as any).__POST_HTML_SAFETY_E2E__ = {calls};
 (window as any).__ACTIVITYPUB_REVIEW_E2E__ = {calls, activityPubRemoteObjects};
 (window as any).__ACTIVITYPUB_SOURCES_E2E__ = {calls, activityPubSources, activityPubSourceFeedItems};
-(window as any).__BLUESKY_SOURCES_E2E__ = {calls, blueskySources, blueskyFeedItems};
+(window as any).__BLUESKY_SOURCES_E2E__ = {calls, blueskySources, blueskyFeedItems, blueskyReviewItems};
 (window as any).__BLUESKY_POST_ACTIONS_E2E__ = {calls, blueskyCrossPostAccount, blueskyPostFixture};
 (window as any).__BLUESKY_ACCOUNT_E2E__ = {calls, blueskyCrossPostAccount};
 

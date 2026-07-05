@@ -103,7 +103,7 @@ module.exports = `
         </div>
       </div>
 
-      <md-progress-bar md-mode="indeterminate" v-if="loadingSources || loadingFeed || actionLoading"></md-progress-bar>
+      <md-progress-bar md-mode="indeterminate" v-if="loadingSources || loadingFeed || loadingReviews || actionLoading"></md-progress-bar>
       <div class="activitypub-sources-error" v-if="errorMessage">{{errorMessage}}</div>
       <div class="activitypub-sources-success" v-if="successMessage">{{successMessage}}</div>
     </md-card-content>
@@ -154,6 +154,10 @@ module.exports = `
               <md-icon class="fas fa-sync-alt"></md-icon>
               <span>Reload feed</span>
             </md-button>
+            <md-button class="md-primary" @click="refreshReviews" :disabled="loadingReviews || actionLoading">
+              <md-icon class="fas fa-clipboard-check"></md-icon>
+              <span>Reload reviews</span>
+            </md-button>
             <md-button class="md-primary" @click="syncSelectedSource" :disabled="loadingFeed || actionLoading || !selectedSource.dbChannelId">
               <md-icon class="fas fa-exchange-alt"></md-icon>
               <span>Sync imported posts</span>
@@ -171,6 +175,71 @@ module.exports = `
               <span>Remove</span>
             </md-button>
           </div>
+
+          <section class="bluesky-review-panel" aria-label="Bluesky source review queue">
+            <div class="activitypub-source-feed-header bluesky-review-header">
+              <div>
+                <h3>Review queue</h3>
+                <div class="activitypub-sources-muted">{{reviewTotal}} cached Bluesky records</div>
+              </div>
+
+              <div class="bluesky-review-controls">
+                <md-field class="bluesky-review-state-field">
+                  <label>State</label>
+                  <md-select v-model="reviewStateFilter" :disabled="loadingReviews || actionLoading">
+                    <md-option value="">Open reviews</md-option>
+                    <md-option value="pending">Pending</md-option>
+                    <md-option value="quarantined">Quarantined</md-option>
+                    <md-option value="blocked">Blocked</md-option>
+                    <md-option value="rejected">Rejected</md-option>
+                    <md-option value="imported">Imported</md-option>
+                  </md-select>
+                </md-field>
+
+                <md-button class="md-primary" @click="refreshReviews" :disabled="loadingReviews || actionLoading">
+                  <md-icon class="fas fa-filter"></md-icon>
+                  <span>Apply</span>
+                </md-button>
+              </div>
+            </div>
+
+            <div class="activitypub-sources-empty" v-if="!loadingReviews && !hasReviewItems">No Bluesky reviews waiting</div>
+
+            <article
+              v-for="review in reviewItems"
+              :key="'review-' + review.id"
+              class="activitypub-feed-item bluesky-review-item">
+              <div class="activitypub-feed-item-header">
+                <div>
+                  <h3>{{getReviewTitle(review)}}</h3>
+                  <div class="activitypub-sources-muted">{{getReviewMeta(review)}}</div>
+                  <div class="activitypub-sources-muted" v-if="getReviewDecisionLabel(review)">{{getReviewDecisionLabel(review)}}</div>
+                </div>
+                <div class="activitypub-feed-item-states">
+                  <span :class="getReviewStateClass(review)">{{review.state || 'pending'}}</span>
+                </div>
+              </div>
+
+              <div class="activitypub-feed-text">{{getReviewText(review)}}</div>
+              <a class="activitypub-feed-link" v-if="getReviewUrl(review)" :href="getReviewUrl(review)" target="_blank" rel="noopener noreferrer">{{getReviewUrl(review)}}</a>
+              <div class="activitypub-sources-error" v-if="review.lastError">{{review.lastError}}</div>
+
+              <div class="activitypub-source-feed-actions bluesky-review-actions">
+                <md-button class="md-primary" @click="importReview(review)" :disabled="actionLoading || !isReviewImportable(review)" :aria-label="'Import ' + getReviewTitle(review)">
+                  <md-icon class="fas fa-file-import"></md-icon>
+                  <span>Import</span>
+                </md-button>
+                <md-button class="md-warn" @click="setReviewState(review, 'rejected')" :disabled="actionLoading || !canRejectReview(review)" :aria-label="'Reject ' + getReviewTitle(review)">
+                  <md-icon class="fas fa-ban"></md-icon>
+                  <span>Reject</span>
+                </md-button>
+                <md-button class="md-primary" @click="setReviewState(review, 'pending')" :disabled="actionLoading || !canResetReview(review)" :aria-label="'Reset ' + getReviewTitle(review)">
+                  <md-icon class="fas fa-undo"></md-icon>
+                  <span>Reset</span>
+                </md-button>
+              </div>
+            </article>
+          </section>
 
           <div class="activitypub-sources-empty" v-if="!loadingFeed && !hasFeedItems">No imported Bluesky posts yet</div>
 
