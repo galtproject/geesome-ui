@@ -10,6 +10,7 @@
 const { GeesomeClient, BrowserLocalClientStorage } = require('geesome-libs/src/GeesomeClient');
 // const SimpleAccountStorage = require('geesome-libs/src/SimpleAccountStorage');
 const commonHelpers = require("geesome-libs/src/common");
+const geesomeWalletClientLib = require('geesome-wallet-client/src/lib');
 const includes = require('lodash/includes');
 
 export default {
@@ -302,7 +303,16 @@ export default {
       },
 
       userBlueskyLogin(input: any = {}) {
-        return geesomeClient.postRequest('soc-net/bluesky/login', input).catch(this.onError);
+        const loginInput = {...input};
+        const appPassword = getBlueskyAppPassword(loginInput);
+        if (loginInput.isEncrypted && appPassword && !loginInput.encryptedApiKey) {
+          loginInput.encryptedApiKey = this.getEncryptedSocNetApiKey(appPassword);
+        }
+        return geesomeClient.postRequest('soc-net/bluesky/login', loginInput).catch(this.onError);
+      },
+
+      getEncryptedSocNetApiKey(apiKey) {
+        return geesomeWalletClientLib.encrypt(geesomeClient.apiKeyHash(), apiKey);
       },
 
       userBlueskyVerifyAccount(input: any = {}) {
@@ -357,4 +367,8 @@ export default {
 
     Vue.prototype.$geesome = Vue.prototype.$geesome;
   }
+}
+
+function getBlueskyAppPassword(input: any = {}) {
+  return input.appPassword || input.password || input.apiKey || '';
 }
