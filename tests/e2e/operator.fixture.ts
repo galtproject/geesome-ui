@@ -163,6 +163,8 @@ const blueskyPostFixture = {
   id: 8,
   localId: 8,
   groupId: postFixtureGroup.staticId,
+  replyToId: 18,
+  repostOfId: 19,
   manifestId: 'bafy-bluesky-post-manifest',
   publishedAt: 1767225600,
   propertiesJson: {},

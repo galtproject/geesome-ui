@@ -511,6 +511,7 @@ a.icon-link {
 
 .bluesky-cross-post-link,
 .bluesky-cross-post-empty,
+.bluesky-cross-post-relation-notice,
 .bluesky-cross-post-error,
 .bluesky-cross-post-success {
   overflow-wrap: anywhere;
@@ -523,6 +524,15 @@ a.icon-link {
 
 .bluesky-cross-post-empty {
   color: #bdbdbd;
+}
+
+.bluesky-cross-post-relation-notice {
+  background: rgba(100, 181, 246, 0.12);
+  border-left: 3px solid #64b5f6;
+  color: #bbdefb;
+  font-size: 13px;
+  line-height: 1.35;
+  padding: 8px 10px;
 }
 
 .bluesky-cross-post-error {
