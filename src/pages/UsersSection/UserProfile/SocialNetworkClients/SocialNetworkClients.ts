@@ -18,7 +18,8 @@ export default {
   },
   methods: {
     async getSocNetsAccounts() {
-      this.socNetAccounts = await this.$geesome.socNetDbAccountList();
+      const result = await this.$geesome.socNetDbAccountList();
+      this.socNetAccounts = Array.isArray(result && result.list) ? result.list : Array.isArray(result) ? result : [];
     },
     // async updateSocNetAccount(acc) {
     //   await this.$geesome.socNetUpdateUser('telegram', acc);
@@ -43,6 +44,9 @@ export default {
         }
       });
     },
+    getSocNetAccountLabel(account) {
+      return account && (account.fullName || account.username || account.accountId) || 'Social account';
+    }
   },
   watch: {},
   computed: {

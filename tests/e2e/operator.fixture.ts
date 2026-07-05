@@ -10,6 +10,7 @@ import ActivityPubRemoteObjectsPage from '../../src/pages/GroupPage/ActivityPubR
 import ActivityPubSourcesPage from '../../src/pages/ActivityPubSourcesPage/ActivityPubSourcesPage';
 import BlueskySourcesPage from '../../src/pages/BlueskySourcesPage/BlueskySourcesPage';
 import UploadContent from '../../src/directives/UploadContent/UploadContent';
+import AddSocNetClientModal from '../../src/pages/UsersSection/modals/AddSocNetClientModal/AddSocNetClientModal';
 
 const calls: any[] = [];
 const accounts = [
@@ -346,6 +347,14 @@ Vue.filter('prettySize', prettySize);
 Vue.prototype.$notify = (payload) => {
   calls.push({type: 'notify', payload});
 };
+Vue.prototype.$asyncModal = {
+  close(id) {
+    calls.push({type: 'asyncModalClose', id});
+  },
+  open(options) {
+    calls.push({type: 'asyncModalOpen', options});
+  }
+};
 Vue.prototype.$store = {
   state: {
     cybActive: false
@@ -360,6 +369,45 @@ Vue.prototype.$geesome = {
   async socNetDbAccountList(params) {
     calls.push({type: 'socNetDbAccountList', params});
     return {list: [blueskyCrossPostAccount]};
+  },
+  getEncryptedSocNetApiKey(apiKey) {
+    calls.push({type: 'getEncryptedSocNetApiKey', apiKey});
+    return `encrypted:${apiKey}`;
+  },
+  async userBlueskyLogin(input) {
+    calls.push({type: 'userBlueskyLogin', input});
+    return {
+      account: {
+        id: 42,
+        userId: 7,
+        socNet: 'bluesky',
+        accountId: 'did:plc:newartist',
+        username: 'newartist.bsky.social',
+        fullName: 'New Artist',
+        hasApiKey: true,
+        isEncrypted: !!input.isEncrypted
+      },
+      profile: {
+        did: 'did:plc:newartist',
+        handle: 'newartist.bsky.social',
+        displayName: 'New Artist'
+      },
+      did: 'did:plc:newartist',
+      handle: 'newartist.bsky.social'
+    };
+  },
+  async userBlueskyVerifyAccount(input) {
+    calls.push({type: 'userBlueskyVerifyAccount', input});
+    return {
+      account: blueskyCrossPostAccount,
+      profile: {
+        did: blueskyCrossPostAccount.accountId,
+        handle: blueskyCrossPostAccount.username,
+        displayName: blueskyCrossPostAccount.fullName
+      },
+      did: blueskyCrossPostAccount.accountId,
+      handle: blueskyCrossPostAccount.username
+    };
   },
   async getUserPinAccounts() {
     calls.push({type: 'getUserPinAccounts'});
@@ -749,15 +797,17 @@ Vue.prototype.$geesome = {
 (window as any).__ACTIVITYPUB_SOURCES_E2E__ = {calls, activityPubSources, activityPubSourceFeedItems};
 (window as any).__BLUESKY_SOURCES_E2E__ = {calls, blueskySources, blueskyFeedItems};
 (window as any).__BLUESKY_POST_ACTIONS_E2E__ = {calls, blueskyCrossPostAccount, blueskyPostFixture};
+(window as any).__BLUESKY_ACCOUNT_E2E__ = {calls, blueskyCrossPostAccount};
 
 new Vue({
   el: '#app',
-  components: {PinServices, PostItem, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage},
+  components: {PinServices, PostItem, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, AddSocNetClientModal},
   data() {
     return {
       currentPage: getCurrentPage(),
       postFixture,
       blueskyPostFixture,
+      blueskyCrossPostAccount,
       postFixtureGroup,
       activityPubGroup
     };
@@ -777,6 +827,14 @@ new Vue({
         <h1>Bluesky post actions</h1>
         <post-item :value="blueskyPostFixture" :group="postFixtureGroup" :show-bluesky-controls="true" />
       </section>
+      <section v-else-if="currentPage === 'bluesky-account-connect'" aria-label="Bluesky account connect fixture">
+        <h1>Bluesky account connect</h1>
+        <add-soc-net-client-modal key="bluesky-account-connect" initial-soc-net="bluesky" />
+      </section>
+      <section v-else-if="currentPage === 'bluesky-account-verify'" aria-label="Bluesky account verify fixture">
+        <h1>Bluesky account verify</h1>
+        <add-soc-net-client-modal key="bluesky-account-verify" :account="blueskyCrossPostAccount" />
+      </section>
       <storage-space-page v-else-if="currentPage === 'storage-space'" />
       <activity-pub-sources-page v-else-if="currentPage === 'activitypub-sources'" />
       <bluesky-sources-page v-else-if="currentPage === 'bluesky-sources'" />
@@ -795,6 +853,12 @@ function getCurrentPage() {
   }
   if (window.location.hash === '#bluesky-post-actions') {
     return 'bluesky-post-actions';
+  }
+  if (window.location.hash === '#bluesky-account-connect') {
+    return 'bluesky-account-connect';
+  }
+  if (window.location.hash === '#bluesky-account-verify') {
+    return 'bluesky-account-verify';
   }
   if (window.location.hash === '#activitypub') {
     return 'activitypub';

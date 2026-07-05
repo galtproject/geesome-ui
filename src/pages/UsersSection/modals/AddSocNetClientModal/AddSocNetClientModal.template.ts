@@ -16,14 +16,16 @@ module.exports = `
     
     <p v-if="socNet === 'telegram'">Visit <a href="https://my.telegram.org/" target="_blank">Telegram Client cabinet</a> to register app and get app id and app hash.</p>
     <p v-if="socNet === 'twitter'">Visit <a href="https://developer.twitter.com/en/apply-for-access" target="_blank">Twitter Api cabinet</a> to register as developer and get api token.</p>
+    <p v-if="socNet === 'bluesky'">Use a Bluesky app password. GeeSome verifies ownership and stores only the local account summary plus the configured credential form.</p>
 
 	<md-field>
 		<label>Social Network</label>
 		<md-select v-model="socNet">
-			<md-option value="telegram">Telegram</md-option>
-			<md-option value="twitter">Twitter</md-option>
-		</md-select>
-	</md-field>
+				<md-option value="telegram">Telegram</md-option>
+				<md-option value="twitter">Twitter</md-option>
+				<md-option value="bluesky">Bluesky</md-option>
+			</md-select>
+		</md-field>
 	
 	<div v-if="socNet === 'twitter'">
 		<md-field>
@@ -106,14 +108,27 @@ module.exports = `
 			
 			<md-checkbox v-model="inputs.forceSMS">Force SMS</md-checkbox>
 		</div>
-	</div>
-    
-	<md-checkbox v-model="inputs.isEncrypted" class="md-primary">Encrypt session key with api token</md-checkbox>
-  </div>
+		</div>
 
-  <template slot="footer">
-    <md-button @click="close" class="md-raised"><span>Close</span></md-button>
-    <md-button @click="login" class="md-raised md-accent" :disabled="loginDisabled || loading">Login</md-button>
-  </template>
-</modal-item>
-`;
+		<div v-if="socNet === 'bluesky'">
+			<md-field>
+			  <label>Handle or DID</label>
+			  <md-input v-model="inputs.identifier" name="bluesky_identifier"></md-input>
+			</md-field>
+
+			<md-field>
+			  <label>App password</label>
+			  <md-input v-model="inputs.appPassword" name="bluesky_app_password" type="password"></md-input>
+			</md-field>
+		</div>
+
+		<md-checkbox v-model="inputs.isEncrypted" class="md-primary">{{encryptionLabel}}</md-checkbox>
+	  </div>
+
+	  <template slot="footer">
+	    <md-button @click="close" class="md-raised"><span>Close</span></md-button>
+	    <md-button v-if="socNet === 'bluesky' && account" @click="verifyBluesky" class="md-raised" :disabled="verifyDisabled">Verify</md-button>
+	    <md-button @click="login" class="md-raised md-accent" :disabled="loginDisabled || loading">{{loginButtonText}}</md-button>
+	  </template>
+	</modal-item>
+	`;
