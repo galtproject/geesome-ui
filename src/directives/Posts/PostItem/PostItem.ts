@@ -211,6 +211,17 @@ export default {
     selectedBlueskyRecordUrl() {
       return getBlueskyRecordUrl(this.selectedBlueskyRecord);
     },
+    blueskyRelationNotice() {
+      if (!this.showBlueskyControls) {
+        return '';
+      }
+      const hasReply = hasPostRelation(this.value, 'replyToId', 'replyTo');
+      const hasQuote = hasPostRelation(this.value, 'repostOfId', 'repostOf');
+      if (!hasReply && !hasQuote) {
+        return '';
+      }
+      return `${getBlueskyRelationLabel(hasReply, hasQuote)} context is preserved when related posts already have Bluesky records; otherwise GeeSome stops instead of flattening the post.`;
+    },
     blueskyActionDisabled() {
       if (this.blueskyActionLoading || !this.selectedBlueskyAccount) {
         return true;
@@ -250,6 +261,23 @@ function getPostProperties(post) {
 
 function getPlainObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function hasPostRelation(post, idField, objectField) {
+  if (!post) {
+    return false;
+  }
+  if (post[idField] !== undefined && post[idField] !== null) {
+    return true;
+  }
+  return !!(post[objectField] && post[objectField].id !== undefined && post[objectField].id !== null);
+}
+
+function getBlueskyRelationLabel(hasReply, hasQuote) {
+  if (hasReply && hasQuote) {
+    return 'Reply and quote';
+  }
+  return hasReply ? 'Reply' : 'Quote';
 }
 
 function getBlueskyRecordUrl(record) {

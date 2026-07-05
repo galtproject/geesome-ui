@@ -31,6 +31,7 @@ test('post detail Bluesky controls cross-post, update, and delete with selected 
   await expect(page.getByRole('heading', {name: 'Bluesky post actions'})).toBeVisible();
   await expect(page.locator('.bluesky-cross-post-form .md-select-value')).toHaveValue('@artist.bsky.social');
   await expect(page.getByLabel('App password')).toBeVisible();
+  await expect(page.getByText('Reply and quote context is preserved')).toBeVisible();
   await expect(page.getByRole('button', {name: 'Post to Bluesky'})).toBeDisabled();
 
   await page.getByLabel('App password').fill('app-password-123');

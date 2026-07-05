@@ -47,6 +47,10 @@ module.exports = `
           Open Bluesky post
         </a>
 
+        <div class="bluesky-cross-post-relation-notice" v-if="blueskyRelationNotice">
+          {{blueskyRelationNotice}}
+        </div>
+
         <md-button class="md-primary" v-if="!selectedBlueskyRecord" @click="crossPostToBluesky" :disabled="blueskyActionDisabled">
           <md-icon class="fas fa-share"></md-icon>
           <span>Post to Bluesky</span>
