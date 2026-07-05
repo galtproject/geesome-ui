@@ -57,6 +57,8 @@ export default {
         this.selectedSource = null;
         this.feedItems = [];
         this.feedTotal = 0;
+        this.reviewItems = [];
+        this.reviewTotal = 0;
         return;
       }
 
@@ -71,6 +73,7 @@ export default {
       this.selectedSource = source || null;
       this.setSourceFormFromSelectedSource();
       await this.refreshFeed();
+      await this.refreshReviews();
     },
     async refreshFeed() {
       if (!this.selectedSource || !this.selectedSource.id || !this.selectedSource.dbChannelId) {
@@ -99,6 +102,36 @@ export default {
 
       this.loadingFeed = false;
     },
+    async refreshReviews() {
+      if (!this.selectedSource || !this.selectedSource.id) {
+        this.reviewItems = [];
+        this.reviewTotal = 0;
+        return;
+      }
+
+      this.loadingReviews = true;
+      this.errorMessage = null;
+
+      try {
+        const filters: any = {
+          limit: this.pageLimit,
+          offset: 0
+        };
+        if (this.reviewStateFilter) {
+          filters.state = this.reviewStateFilter;
+        }
+
+        const page = await this.$geesome.adminGetBlueskySourceReviews(this.selectedSource.id, filters);
+        this.selectedSource = page && page.source ? page.source : this.selectedSource;
+        this.replaceSource(this.selectedSource);
+        this.reviewItems = page && Array.isArray(page.list) ? page.list : [];
+        this.reviewTotal = page && page.total ? page.total : this.reviewItems.length;
+      } catch (e) {
+        this.errorMessage = getErrorMessage(e, 'Could not load Bluesky source reviews');
+      }
+
+      this.loadingReviews = false;
+    },
     async refreshSelectedSourceFromRemote() {
       if (!this.selectedSource || !this.selectedSource.id) {
         return;
@@ -117,6 +150,7 @@ export default {
         this.replaceSource(this.selectedSource);
         this.successMessage = getRefreshSuccessMessage(result);
         await this.refreshFeed();
+        await this.refreshReviews();
       } catch (e) {
         this.errorMessage = getErrorMessage(e, 'Could not refresh Bluesky source');
       }
@@ -140,6 +174,7 @@ export default {
         this.replaceSource(this.selectedSource);
         this.successMessage = getSyncSuccessMessage(result);
         await this.refreshFeed();
+        await this.refreshReviews();
       } catch (e) {
         this.errorMessage = getErrorMessage(e, 'Could not sync Bluesky source');
       }
@@ -175,9 +210,55 @@ export default {
         await this.$geesome.adminRemoveBlueskySourceSubscription(this.selectedSource.id);
         this.selectedSource = null;
         this.feedItems = [];
+        this.reviewItems = [];
         await this.refreshSources();
       } catch (e) {
         this.errorMessage = getErrorMessage(e, 'Could not remove Bluesky source');
+      }
+
+      this.actionLoading = false;
+    },
+    async importReview(review) {
+      if (!this.selectedSource || !this.selectedSource.id || !review || !review.id) {
+        return;
+      }
+
+      this.actionLoading = true;
+      this.errorMessage = null;
+      this.successMessage = null;
+
+      try {
+        const result = await this.$geesome.adminImportBlueskySourceReview(this.selectedSource.id, review.id, {});
+        this.selectedSource = result && result.source ? result.source : this.selectedSource;
+        this.replaceSource(this.selectedSource);
+        this.successMessage = getReviewImportSuccessMessage(result);
+        await this.refreshReviews();
+        await this.refreshFeed();
+      } catch (e) {
+        this.errorMessage = getErrorMessage(e, 'Could not import Bluesky review');
+      }
+
+      this.actionLoading = false;
+    },
+    async setReviewState(review, state) {
+      if (!this.selectedSource || !this.selectedSource.id || !review || !review.id) {
+        return;
+      }
+
+      this.actionLoading = true;
+      this.errorMessage = null;
+      this.successMessage = null;
+
+      try {
+        const updatedReview = await this.$geesome.adminUpdateBlueskySourceReviewState(
+          this.selectedSource.id,
+          review.id,
+          {state}
+        );
+        this.successMessage = `Marked ${this.getReviewTitle(updatedReview || review)} ${state}`;
+        await this.refreshReviews();
+      } catch (e) {
+        this.errorMessage = getErrorMessage(e, 'Could not update Bluesky review');
       }
 
       this.actionLoading = false;
@@ -297,6 +378,33 @@ export default {
     },
     getPostStatusClass(item) {
       return `activitypub-source-status status-${item && item.status || 'published'}`;
+    },
+    getReviewTitle(review) {
+      return getReviewTitle(review);
+    },
+    getReviewText(review) {
+      return getReviewText(review);
+    },
+    getReviewMeta(review) {
+      return getReviewMeta(review, this.selectedSource);
+    },
+    getReviewUrl(review) {
+      return getReviewUrl(review, this.selectedSource);
+    },
+    getReviewDecisionLabel(review) {
+      return getReviewDecisionLabel(review);
+    },
+    getReviewStateClass(review) {
+      return `activitypub-feed-state review-${review && review.state || 'pending'}`;
+    },
+    isReviewImportable(review) {
+      return isReviewImportable(review);
+    },
+    canRejectReview(review) {
+      return canRejectReview(review);
+    },
+    canResetReview(review) {
+      return canResetReview(review);
     }
   },
   computed: {
@@ -305,6 +413,9 @@ export default {
     },
     hasFeedItems() {
       return this.feedItems.length > 0;
+    },
+    hasReviewItems() {
+      return this.reviewItems.length > 0;
     },
     subscribeDisabled() {
       return this.actionLoading || this.loadingSources || !this.sourceActor.trim();
@@ -321,9 +432,12 @@ export default {
       sources: [],
       selectedSource: null,
       feedItems: [],
+      reviewItems: [],
       totalSources: 0,
       feedTotal: 0,
+      reviewTotal: 0,
       pageLimit: 20,
+      reviewStateFilter: '',
       sourceActor: defaultBlueskyActor,
       sourceFilter: defaultBlueskyFilter,
       sourceDisplayName: '@bsky.app',
@@ -339,6 +453,7 @@ export default {
       },
       loadingSources: false,
       loadingFeed: false,
+      loadingReviews: false,
       actionLoading: false,
       errorMessage: null,
       successMessage: null
@@ -423,6 +538,67 @@ function getFeedItemUrl(item, source) {
   return getBlueskyPostUrl(source && source.actor, item && item.sourcePostId);
 }
 
+function getReviewTitle(review) {
+  const preview = review && review.preview || {};
+  if (preview.name || preview.title) {
+    return preview.name || preview.title;
+  }
+  if (preview.text || preview.contentText) {
+    return preview.text || preview.contentText;
+  }
+  if (review && review.uri) {
+    return review.uri;
+  }
+  if (review && review.id) {
+    return `Review #${review.id}`;
+  }
+  return 'Review item';
+}
+
+function getReviewText(review) {
+  const preview = review && review.preview || {};
+  return preview.contentText || preview.text || preview.summaryText || preview.description || 'No text preview';
+}
+
+function getReviewMeta(review, source) {
+  const parts = [
+    review && review.actor || source && source.actor,
+    review && review.moderationAction,
+    review && review.publishedAt ? formatUtcDateTime(review.publishedAt) : null,
+    review && review.id ? `review #${review.id}` : null
+  ].filter(Boolean);
+  return parts.join(' · ');
+}
+
+function getReviewUrl(review, source) {
+  const preview = review && review.preview || {};
+  if (preview.url) {
+    return preview.url;
+  }
+  return getBlueskyPostUrl(review && review.actor || source && source.actor, review && review.uri);
+}
+
+function getReviewDecisionLabel(review) {
+  const decision = review && review.moderationDecision || {};
+  const parts = [
+    review && review.moderationAction,
+    decision && (decision.reason || decision.ruleName || decision.message)
+  ].filter(Boolean);
+  return parts.join(' · ');
+}
+
+function isReviewImportable(review) {
+  return review && (review.state === 'pending' || review.state === 'quarantined');
+}
+
+function canRejectReview(review) {
+  return review && review.state !== 'imported' && review.state !== 'rejected';
+}
+
+function canResetReview(review) {
+  return review && review.state !== 'pending' && review.state !== 'imported';
+}
+
 function getPostProperty(item, key) {
   const properties = item && item.propertiesJson || {};
   const bluesky = properties && properties.bluesky || {};
@@ -454,6 +630,10 @@ function getSyncSuccessMessage(result) {
   const updated = readNumber(result && result.updated);
   const deleted = readNumber(result && result.deleted);
   return `Checked ${checked}, updated ${updated}, deleted ${deleted}`;
+}
+
+function getReviewImportSuccessMessage(result) {
+  return `Imported ${readNumber(result && result.imported)} Bluesky review`;
 }
 
 function parsePositiveInteger(value) {

@@ -288,6 +288,27 @@ export default {
         ).catch(this.onError);
       },
 
+      adminGetBlueskySourceReviews(sourceId, filters: any = {}) {
+        return geesomeClient.getRequest(
+          `admin/bluesky/sources/${encodeURIComponent(sourceId)}/reviews`,
+          {params: filters}
+        ).catch(this.onError);
+      },
+
+      adminUpdateBlueskySourceReviewState(sourceId, reviewId, input: any = {}) {
+        return geesomeClient.postRequest(
+          `admin/bluesky/sources/${encodeURIComponent(sourceId)}/reviews/${encodeURIComponent(reviewId)}/state`,
+          input
+        ).catch(this.onError);
+      },
+
+      adminImportBlueskySourceReview(sourceId, reviewId, input: any = {}) {
+        return geesomeClient.postRequest(
+          `admin/bluesky/sources/${encodeURIComponent(sourceId)}/reviews/${encodeURIComponent(reviewId)}/import`,
+          input
+        ).catch(this.onError);
+      },
+
       adminRefreshBlueskySourceSubscription(sourceId, input: any = {}) {
         return geesomeClient.postRequest(
           `admin/bluesky/sources/${encodeURIComponent(sourceId)}/refresh`,

@@ -32,6 +32,9 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
   await expect(page.locator('.activitypub-source-list-item').filter({hasText: '@bsky.app'})).toBeVisible();
   await expect(page.getByText('Native Bluesky launch')).toBeVisible();
   await expect(page.getByText('Native ATProto post imported into GeeSome.')).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Review queue'})).toBeVisible();
+  await expect(page.getByText('Review-first Bluesky post waiting for import.')).toBeVisible();
+  await expect(page.getByText('Quarantined Bluesky post waiting for admin decision.')).toBeVisible();
   await expect(page.getByRole('button', {name: 'Subscribe source'})).toBeVisible();
 
   await page.getByLabel('Rule value').fill('giveaway spam');
@@ -62,6 +65,13 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
   await expect(page.getByText('https://bsky.app/profile/bsky.app/post/abc')).toBeVisible();
   await saveShot(page, 'bluesky-sources-desktop.png');
 
+  await page.getByRole('button', {name: 'Import Review this Bluesky post'}).click();
+  await expect(page.getByText('Imported 1 Bluesky review')).toBeVisible();
+  await expect(page.getByText('Imported from review queue.')).toBeVisible();
+
+  await page.getByRole('button', {name: 'Reject Quarantined Bluesky post'}).click();
+  await expect(page.getByText('Marked Quarantined Bluesky post rejected')).toBeVisible();
+
   await page.getByRole('button', {name: 'Sync imported posts'}).click();
   await expect(page.getByText('Checked 1, updated 1, deleted 0')).toBeVisible();
 
@@ -72,6 +82,12 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
   expect(listCalls[0].filters).toMatchObject({limit: 20, offset: 0});
   const feedCalls = await calls(page, 'adminGetBlueskySourceFeed');
   expect(feedCalls[0].filters).toMatchObject({limit: 20, offset: 0});
+  const reviewCalls = await calls(page, 'adminGetBlueskySourceReviews');
+  expect(reviewCalls[0].filters).toMatchObject({limit: 20, offset: 0});
+  const importReviewCalls = await calls(page, 'adminImportBlueskySourceReview');
+  expect(importReviewCalls[0]).toMatchObject({sourceId: 801, reviewId: 951, input: {}});
+  const reviewStateCalls = await calls(page, 'adminUpdateBlueskySourceReviewState');
+  expect(reviewStateCalls[0]).toMatchObject({sourceId: 801, reviewId: 952, input: {state: 'rejected'}});
   const syncCalls = await calls(page, 'adminSyncBlueskySourcePosts');
   expect(syncCalls[0].input).toMatchObject({limit: 20});
   const updateCalls = await calls(page, 'adminUpdateBlueskySourceSubscription');

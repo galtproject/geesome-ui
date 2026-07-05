@@ -144,6 +144,11 @@
     .bluesky-rule-builder {
       grid-template-columns: 1fr;
     }
+
+    .bluesky-review-controls {
+      align-items: stretch;
+      flex-direction: column;
+    }
   }
 
   .bluesky-cross-post-form {
