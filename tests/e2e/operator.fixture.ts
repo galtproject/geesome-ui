@@ -558,6 +558,21 @@ Vue.prototype.$geesome = {
       dbChannel: {id: 33, groupId: 31, title: '@bsky.app'}
     };
   },
+  async userBlueskyMigrationReconcileRelations(input) {
+    calls.push({type: 'userBlueskyMigrationReconcileRelations', input});
+    return {
+      checked: 2,
+      updated: input && input.dryRun ? 1 : 2,
+      skipped: 1,
+      failed: 0,
+      dryRun: !!(input && input.dryRun),
+      rows: [
+        {postId: 101, changes: {replyToId: 100}},
+        {postId: 102, reason: 'bluesky_migration_relation_target_missing'}
+      ],
+      errors: []
+    };
+  },
   async userActivityPubMigrationPreview(input) {
     calls.push({type: 'userActivityPubMigrationPreview', input});
     return socialMigrationActivityPubPreview;
@@ -573,6 +588,21 @@ Vue.prototype.$geesome = {
       skipped: 1,
       postIds: [88],
       remoteObjectIds: [501, 502]
+    };
+  },
+  async userActivityPubMigrationReconcileRelations(input) {
+    calls.push({type: 'userActivityPubMigrationReconcileRelations', input});
+    return {
+      checked: 2,
+      updated: 1,
+      skipped: 1,
+      failed: 0,
+      dryRun: !!(input && input.dryRun),
+      rows: [
+        {postId: 201, changes: {replyToId: 200}},
+        {postId: 202, reason: 'activitypub_migration_relation_target_missing'}
+      ],
+      errors: []
     };
   },
   async getUserPinAccounts() {

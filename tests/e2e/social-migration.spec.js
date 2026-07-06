@@ -54,6 +54,12 @@ async function addMigrationFilter(page, value, options = {}) {
   await page.getByRole('button', {name: 'Add filter'}).click();
 }
 
+function materialCheckbox(page, label) {
+  return page.locator(
+    `xpath=//*[@id="social-migration-page"]//*[contains(concat(" ", normalize-space(@class), " "), " md-checkbox ")][normalize-space(.)="${label}"]`
+  ).first();
+}
+
 test('social migration previews and imports Bluesky and ActivityPub accounts (dual viewport)', async ({page, baseURL}) => {
   await page.setViewportSize(MOBILE_VIEWPORT);
   await page.goto(`${baseURL}/#social-migration`);
@@ -85,6 +91,10 @@ test('social migration previews and imports Bluesky and ActivityPub accounts (du
 
   await page.getByRole('button', {name: 'Start import'}).click();
   await expect(page.getByText('Queued bluesky-migration-import #77')).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Relation reconciliation'})).toBeVisible();
+  await page.getByRole('button', {name: 'Reconcile relations'}).click();
+  await expect(page.getByText('Relation dry run checked 2 posts')).toBeVisible();
+  await saveShot(page, 'social-migration-bluesky-reconcile-mobile.png');
 
   const blueskyPreviewCalls = await calls(page, 'userBlueskyMigrationPreview');
   expect(blueskyPreviewCalls[0].input).toMatchObject({
@@ -109,6 +119,12 @@ test('social migration previews and imports Bluesky and ActivityPub accounts (du
     expect.objectContaining({type: 'keyword', field: 'text', action: 'block', value: 'giveaway spam'}),
     expect.objectContaining({type: 'regex', field: 'groupName', action: 'quarantine', value: '^(spam|casino)'})
   ]));
+  const blueskyReconcileCalls = await calls(page, 'userBlueskyMigrationReconcileRelations');
+  expect(blueskyReconcileCalls[0].input).toMatchObject({
+    groupName: 'migrated-social-page',
+    limit: 20,
+    dryRun: true
+  });
 
   await page.setViewportSize(DESKTOP_VIEWPORT);
   await selectMaterialOption(page, 'Source type', 'ActivityPub');
@@ -122,6 +138,11 @@ test('social migration previews and imports Bluesky and ActivityPub accounts (du
 
   await page.getByRole('button', {name: 'Start import'}).click();
   await expect(page.getByText('Queued activitypub-migration-import #78')).toBeVisible();
+  await materialCheckbox(page, 'Dry run').locator('.md-checkbox-container').click();
+  await expect(materialCheckbox(page, 'Dry run')).not.toHaveClass(/md-checked/);
+  await page.getByRole('button', {name: 'Reconcile relations'}).click();
+  await expect(page.getByText('Reconciled 1 post relations')).toBeVisible();
+  await saveShot(page, 'social-migration-activitypub-reconcile-desktop.png');
 
   const activityPubPreviewCalls = await calls(page, 'userActivityPubMigrationPreview');
   expect(activityPubPreviewCalls[0].input).toMatchObject({
@@ -142,4 +163,10 @@ test('social migration previews and imports Bluesky and ActivityPub accounts (du
     expect.objectContaining({type: 'keyword', field: 'text', action: 'block', value: 'giveaway spam'}),
     expect.objectContaining({type: 'regex', field: 'groupName', action: 'quarantine', value: '^(spam|casino)'})
   ]));
+  const activityPubReconcileCalls = await calls(page, 'userActivityPubMigrationReconcileRelations');
+  expect(activityPubReconcileCalls[0].input).toMatchObject({
+    groupName: 'migrated-social-page',
+    limit: 20,
+    dryRun: false
+  });
 });
