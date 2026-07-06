@@ -162,7 +162,8 @@
   }
 
   .social-migration-page {
-    .social-migration-form {
+    .social-migration-form,
+    .social-migration-rule-builder {
       grid-template-columns: 1fr;
     }
 
