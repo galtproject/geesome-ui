@@ -523,6 +523,36 @@ a.icon-link {
     align-items: end;
   }
 
+  .social-migration-rule-builder {
+    display: grid;
+    gap: 12px;
+    align-items: end;
+    grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(140px, 180px)) auto;
+    margin-top: 12px;
+  }
+
+  .social-migration-rules-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .social-migration-rule-chip {
+    align-items: center;
+    background: #19161c;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    display: inline-flex;
+    gap: 4px;
+    min-width: 0;
+    padding: 4px 4px 4px 8px;
+
+    span {
+      overflow-wrap: anywhere;
+    }
+  }
+
   .social-migration-actions {
     align-items: center;
     display: flex;

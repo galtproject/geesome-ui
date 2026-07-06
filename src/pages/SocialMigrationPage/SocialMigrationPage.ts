@@ -87,7 +87,7 @@ export default {
         input.groupName = this.targetGroupName.trim();
         input.async = this.importAsync;
         input.maxPages = parsePositiveInteger(this.maxPages) || 1;
-        input.moderationPolicy = {mode: this.moderationMode};
+        input.moderationPolicy = this.getModerationPolicy();
       }
       return input;
     },
@@ -115,9 +115,33 @@ export default {
         input.createPosts = true;
         input.groupName = this.targetGroupName.trim();
         input.async = this.importAsync;
-        input.moderationPolicy = {mode: this.moderationMode};
+        input.moderationPolicy = this.getModerationPolicy();
       }
       return input;
+    },
+    getModerationPolicy() {
+      return {
+        mode: this.moderationMode,
+        rules: this.moderationRules
+      };
+    },
+    addModerationRule() {
+      const value = this.newRule.value.trim();
+      if (!value) {
+        return;
+      }
+
+      this.moderationRules = this.moderationRules.concat([{
+        name: value,
+        type: this.newRule.type,
+        field: this.newRule.field,
+        action: this.newRule.action,
+        value
+      }]);
+      this.newRule.value = '';
+    },
+    removeModerationRule(index) {
+      this.moderationRules = this.moderationRules.filter((item, itemIndex) => itemIndex !== index);
     },
     getSelectedBlueskyAccountData() {
       const account = this.blueskyAccounts.find((item) => String(item.id) === String(this.selectedBlueskyAccountId));
@@ -162,6 +186,9 @@ export default {
       return Object.keys(summary)
         .filter((key) => Number.isFinite(Number(summary[key])))
         .map((key) => ({key, value: summary[key]}));
+    },
+    getRuleLabel(rule) {
+      return getRuleLabel(rule);
     }
   },
   watch: {
@@ -235,6 +262,13 @@ export default {
       ownershipProofToken: '',
       targetGroupName: 'migrated-social-page',
       moderationMode: 'autoImport',
+      moderationRules: [],
+      newRule: {
+        type: 'keyword',
+        field: 'text',
+        action: 'block',
+        value: ''
+      },
       limit: 10,
       maxPages: 2,
       importAsync: true,
@@ -266,6 +300,16 @@ function parsePositiveInteger(value) {
 function readNumber(value) {
   const result = Number(value || 0);
   return Number.isFinite(result) ? result : 0;
+}
+
+function getRuleLabel(rule) {
+  const parts = [
+    rule && rule.action || 'block',
+    rule && rule.type || 'keyword',
+    rule && rule.field || 'text',
+    rule && rule.value
+  ].filter(Boolean);
+  return parts.join(' · ');
 }
 
 function getErrorMessage(error, fallback) {

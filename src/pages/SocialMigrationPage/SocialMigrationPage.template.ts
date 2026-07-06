@@ -89,6 +89,53 @@ module.exports = `
         </md-field>
       </div>
 
+      <div class="social-migration-rule-builder">
+        <md-field>
+          <label>Filter value</label>
+          <md-input v-model="newRule.value" :disabled="loading"></md-input>
+        </md-field>
+
+        <md-field>
+          <label>Type</label>
+          <md-select v-model="newRule.type" :disabled="loading">
+            <md-option value="keyword">Keyword</md-option>
+            <md-option value="regex">Regex</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Field</label>
+          <md-select v-model="newRule.field" :disabled="loading">
+            <md-option value="text">Post text</md-option>
+            <md-option value="source">Source</md-option>
+            <md-option value="groupName">Group name</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Action</label>
+          <md-select v-model="newRule.action" :disabled="loading">
+            <md-option value="block">Block</md-option>
+            <md-option value="quarantine">Quarantine</md-option>
+            <md-option value="review">Review</md-option>
+          </md-select>
+        </md-field>
+
+        <md-button class="md-primary" @click="addModerationRule" :disabled="loading || !newRule.value.trim()">
+          <md-icon class="fas fa-filter"></md-icon>
+          <span>Add filter</span>
+        </md-button>
+      </div>
+
+      <div class="social-migration-rules-list" v-if="moderationRules.length">
+        <div class="social-migration-rule-chip" v-for="(rule, index) in moderationRules" :key="index">
+          <span>{{getRuleLabel(rule)}}</span>
+          <md-button class="md-icon-button md-dense" @click="removeModerationRule(index)" :disabled="loading" :aria-label="'Remove ' + getRuleLabel(rule)">
+            <md-icon class="fas fa-times"></md-icon>
+          </md-button>
+        </div>
+      </div>
+
       <div class="social-migration-actions">
         <md-checkbox v-model="importAsync" :disabled="loading">Run as async job</md-checkbox>
 
