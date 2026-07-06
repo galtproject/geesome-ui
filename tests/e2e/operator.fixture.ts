@@ -571,16 +571,19 @@ Vue.prototype.$geesome = {
   async userBlueskyMigrationReconcileRelations(input) {
     calls.push({type: 'userBlueskyMigrationReconcileRelations', input});
     return {
-      checked: 2,
+      checked: 4,
       updated: input && input.dryRun ? 1 : 2,
-      skipped: 1,
+      skipped: 3,
       failed: 0,
       dryRun: !!(input && input.dryRun),
       rows: [
-        {postId: 101, changes: {replyToId: 100}},
-        {postId: 102, reason: 'bluesky_migration_relation_target_missing'}
+        {postId: 101, sourcePostId: 'at://did:plc:bsky/app.bsky.feed.post/root', changes: {replyToId: 100}},
+        {postId: 102, sourcePostId: 'at://did:plc:bsky/app.bsky.feed.post/missing', reason: 'bluesky_migration_relation_target_missing'},
+        {postId: 103, sourcePostId: 'at://did:plc:bsky/app.bsky.feed.post/ambiguous', reason: 'bluesky_migration_relation_target_ambiguous'},
+        {postId: 104, sourcePostId: 'at://did:plc:bsky/app.bsky.feed.post/blocked', reason: 'bluesky_migration_reply_not_permitted'}
       ],
-      errors: []
+      errors: [],
+      nextCursor: {publishedAt: '2026-07-04T08:00:00.000Z', id: 104}
     };
   },
   async userActivityPubMigrationPreview(input) {
@@ -609,8 +612,9 @@ Vue.prototype.$geesome = {
       failed: 0,
       dryRun: !!(input && input.dryRun),
       rows: [
-        {postId: 201, changes: {replyToId: 200}},
-        {postId: 202, reason: 'activitypub_migration_relation_target_missing'}
+        {postId: 201, sourcePostId: 'remoteObject:501', changes: {replyToId: 200}},
+        {postId: 202, sourcePostId: 'remoteObject:502', reason: 'activitypub_migration_relation_target_missing'},
+        {postId: 203, sourcePostId: 'remoteObject:503', reason: 'activitypub_migration_reply_already_set'}
       ],
       errors: []
     };

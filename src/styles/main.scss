@@ -531,10 +531,23 @@ a.icon-link {
     align-items: end;
   }
 
+  .social-migration-policy-builder,
   .social-migration-rule-builder {
     display: grid;
     gap: 12px;
     align-items: end;
+  }
+
+  .social-migration-policy-builder {
+    grid-template-columns: repeat(6, minmax(130px, 1fr));
+    margin-top: 12px;
+  }
+
+  .social-migration-policy-meta {
+    margin-top: 8px;
+  }
+
+  .social-migration-rule-builder {
     grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(140px, 180px)) auto;
     margin-top: 12px;
   }
@@ -573,7 +586,7 @@ a.icon-link {
     align-items: end;
     display: grid;
     gap: 12px;
-    grid-template-columns: minmax(120px, auto) minmax(160px, 220px) auto;
+    grid-template-columns: repeat(3, minmax(160px, 1fr)) repeat(2, minmax(140px, 180px)) auto;
     margin-top: 12px;
   }
 
@@ -606,6 +619,61 @@ a.icon-link {
     overflow: auto;
     padding: 10px;
     white-space: pre-wrap;
+  }
+
+  .social-migration-reconcile-next {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0;
+  }
+
+  .social-migration-reconcile-list,
+  .social-migration-reconcile-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .social-migration-reconcile-row {
+    align-items: center;
+    background: #19161c;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 10px;
+
+    div {
+      min-width: 0;
+    }
+
+    strong,
+    small {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .activitypub-feed-state.reconcile-linked {
+    background: rgba(33, 186, 69, 0.18);
+    color: #71dc8b;
+  }
+
+  .activitypub-feed-state.reconcile-ambiguous,
+  .activitypub-feed-state.reconcile-missing,
+  .activitypub-feed-state.reconcile-permission-blocked {
+    background: rgba(251, 189, 8, 0.16);
+    color: #ffd76b;
+  }
+
+  .activitypub-feed-state.reconcile-already-linked,
+  .activitypub-feed-state.reconcile-skipped {
+    background: rgba(255, 255, 255, 0.08);
+    color: #bdb8c7;
   }
 }
 
