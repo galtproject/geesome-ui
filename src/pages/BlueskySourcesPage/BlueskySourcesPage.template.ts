@@ -54,6 +54,66 @@ module.exports = `
         <md-button class="md-raised md-accent activitypub-sources-subscribe-button" @click="subscribeSource" :disabled="subscribeDisabled">
           Subscribe source
         </md-button>
+
+        <md-button class="md-raised md-primary activitypub-sources-subscribe-button" @click="saveSelectedSourceSettings" :disabled="saveSettingsDisabled">
+          Save settings
+        </md-button>
+      </div>
+
+      <div class="bluesky-policy-builder" aria-label="Bluesky import policy">
+        <md-field>
+          <label>Images</label>
+          <md-select v-model="sourceMediaPolicy.images" :disabled="actionLoading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="ignore">Ignore</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Link previews</label>
+          <md-select v-model="sourceMediaPolicy.linkPreviews" :disabled="actionLoading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="ignore">Ignore</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Unsupported embeds</label>
+          <md-select v-model="sourceMediaPolicy.unsupportedEmbeds" :disabled="actionLoading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="ignore">Ignore</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Replies</label>
+          <md-select v-model="sourceRelationPolicy.replies" :disabled="actionLoading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="omit">Omit</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Quotes</label>
+          <md-select v-model="sourceRelationPolicy.quotes" :disabled="actionLoading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="omit">Omit</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Reposts</label>
+          <md-select v-model="sourceRelationPolicy.reposts" :disabled="actionLoading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="omit">Omit</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
       </div>
 
       <div class="bluesky-rule-builder">
@@ -125,6 +185,7 @@ module.exports = `
             <span class="activitypub-source-list-text">
               <strong>{{getSourceTitle(source)}}</strong>
               <small>{{getSourceMeta(source)}}</small>
+              <small>{{getSourcePolicyMeta(source)}}</small>
               <small>{{getSourceRefreshText(source)}}</small>
             </span>
             <span class="activitypub-source-list-side">
@@ -139,6 +200,7 @@ module.exports = `
             <div>
               <h2>{{getSourceTitle(selectedSource)}}</h2>
               <div class="activitypub-sources-muted">{{getSourceMeta(selectedSource)}}</div>
+              <div class="activitypub-sources-muted">{{getSourcePolicyMeta(selectedSource)}}</div>
               <div class="activitypub-sources-muted">{{getSourceRefreshText(selectedSource)}}</div>
               <div class="activitypub-sources-error" v-if="selectedSource.lastError">{{selectedSource.lastError}}</div>
             </div>

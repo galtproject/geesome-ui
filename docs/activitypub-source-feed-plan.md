@@ -11,6 +11,7 @@ This is separate from the current group ActivityPub review screen. The review sc
 - Add a top-level ActivityPub/Sources entry in the app navigation for users with the relevant admin/read permission.
 - Show a source sidebar/list with actor avatar, name, handle, origin domain, subscription status, last refresh time, unread count, and error state.
 - Provide an add-source flow that accepts an ActivityPub handle or actor URL. For the Bluesky official account preset, label it as `@bsky.app via Bridgy Fed` and resolve through `acct:bsky.app@bsky.brid.gy` unless the backend says otherwise.
+- For native Bluesky/ATProto sources, expose stored import defaults for image embeds, link previews, unsupported embeds, replies, quotes, and reposts. The source screen should let an operator save those defaults and pass the same values as one-off overrides when manually refreshing or importing a review item.
 - Show a feed view ordered by remote `publishedAt` plus a stable local id tie-breaker. Feed cards should show source identity, content text/rich text, safe links, attachment previews according to backend `embedPolicy`, post time, remote URL, and import/review state where relevant.
 - Include refresh and unsubscribe controls. Refresh should show in-progress, success, skipped, and error states without blocking the rest of the page.
 - Keep the mobile layout single-column with source selector tabs/sheets; keep desktop as source list plus feed. Do not hide source status or errors on mobile.

@@ -440,8 +440,16 @@ a.icon-link {
 
 .bluesky-sources-page {
   .bluesky-sources-subscribe,
+  .bluesky-policy-builder,
   .bluesky-rule-builder {
     grid-template-columns: repeat(3, minmax(180px, 1fr));
+  }
+
+  .bluesky-policy-builder {
+    display: grid;
+    gap: 12px;
+    align-items: end;
+    margin-top: 12px;
   }
 
   .bluesky-rule-builder {
