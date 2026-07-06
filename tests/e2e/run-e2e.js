@@ -59,6 +59,7 @@ async function main() {
     'tests/e2e/activitypub-review.spec.js',
     'tests/e2e/activitypub-sources.spec.js',
     'tests/e2e/bluesky-sources.spec.js',
+    'tests/e2e/social-migration.spec.js',
     'tests/e2e/bluesky-post-actions.spec.js',
     'tests/e2e/bluesky-account.spec.js'
   ] : [];

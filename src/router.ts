@@ -37,6 +37,7 @@ import EditPassword from "./pages/UsersSection/UserProfile/EditPassword/EditPass
 import StorageSpacePage from "./pages/StorageSpacePage/StorageSpacePage";
 import ActivityPubSourcesPage from "./pages/ActivityPubSourcesPage/ActivityPubSourcesPage";
 import BlueskySourcesPage from "./pages/BlueskySourcesPage/BlueskySourcesPage";
+import SocialMigrationPage from "./pages/SocialMigrationPage/SocialMigrationPage";
 
 Vue.use(Router);
 
@@ -122,6 +123,11 @@ export default new Router({
       path: '/bluesky-sources',
       name: 'bluesky-sources',
       component: BlueskySourcesPage
+    },
+    {
+      path: '/social-migration',
+      name: 'social-migration',
+      component: SocialMigrationPage
     },
     {
       path: '/new-user',

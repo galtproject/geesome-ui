@@ -12,6 +12,7 @@
       "storage_space": "Storage space",
       "activitypub_sources": "ActivityPub sources",
       "bluesky_sources": "Bluesky sources",
+      "social_migration": "Social migration",
       "administration_groups": "Administrate groups",
       "followed_groups": "Followed groups"
     }
