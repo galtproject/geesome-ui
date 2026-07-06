@@ -51,6 +51,61 @@ module.exports = `
           {{blueskyRelationNotice}}
         </div>
 
+        <div class="bluesky-cross-post-policy" aria-label="Bluesky cross-post policy">
+          <md-field>
+            <label>Images</label>
+            <md-select v-model="blueskyMediaPolicy.images" :disabled="blueskyActionLoading">
+              <md-option value="upload">Upload blobs</md-option>
+              <md-option value="link">Public links</md-option>
+              <md-option value="reject">Reject images</md-option>
+            </md-select>
+          </md-field>
+
+          <md-field>
+            <label>Upload failure</label>
+            <md-select v-model="blueskyMediaPolicy.imageUploadFailure" :disabled="blueskyActionLoading">
+              <md-option value="link">Use public link</md-option>
+              <md-option value="reject">Reject post</md-option>
+            </md-select>
+          </md-field>
+
+          <md-field>
+            <label>Attachments</label>
+            <md-select v-model="blueskyMediaPolicy.attachments" :disabled="blueskyActionLoading">
+              <md-option value="card">External card</md-option>
+              <md-option value="link">Links only</md-option>
+              <md-option value="reject">Reject attachments</md-option>
+              <md-option value="ignore">Ignore attachments</md-option>
+            </md-select>
+          </md-field>
+
+          <md-field>
+            <label>Link previews</label>
+            <md-select v-model="blueskyMediaPolicy.linkPreviews" :disabled="blueskyActionLoading">
+              <md-option value="card">External card</md-option>
+              <md-option value="link">Links only</md-option>
+              <md-option value="reject">Reject previews</md-option>
+              <md-option value="ignore">Ignore previews</md-option>
+            </md-select>
+          </md-field>
+
+          <md-field>
+            <label>Replies</label>
+            <md-select v-model="blueskyRelationPolicy.replies" :disabled="blueskyActionLoading">
+              <md-option value="require">Require Bluesky identity</md-option>
+              <md-option value="omit">Omit reply metadata</md-option>
+            </md-select>
+          </md-field>
+
+          <md-field>
+            <label>Quotes</label>
+            <md-select v-model="blueskyRelationPolicy.quotes" :disabled="blueskyActionLoading">
+              <md-option value="require">Require Bluesky identity</md-option>
+              <md-option value="omit">Omit quote metadata</md-option>
+            </md-select>
+          </md-field>
+        </div>
+
         <md-button class="md-primary" v-if="!selectedBlueskyRecord" @click="crossPostToBluesky" :disabled="blueskyActionDisabled">
           <md-icon class="fas fa-share"></md-icon>
           <span>Post to Bluesky</span>
