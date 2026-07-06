@@ -195,5 +195,33 @@ module.exports = `
       <pre class="social-migration-result">{{JSON.stringify(importResult, null, 2)}}</pre>
     </md-card-content>
   </md-card>
+
+  <md-card v-if="importResult">
+    <md-card-content>
+      <h2>Relation reconciliation</h2>
+      <div class="social-migration-reconcile-form">
+        <md-checkbox v-model="reconcileDryRun" :disabled="loading">Dry run</md-checkbox>
+
+        <md-field>
+          <label>Reconcile limit</label>
+          <md-input v-model="reconcileLimit" type="number" min="1" max="100" :disabled="loading"></md-input>
+        </md-field>
+
+        <md-button class="md-raised md-primary" @click="reconcileRelations" :disabled="reconcileDisabled">
+          <md-icon class="fas fa-link"></md-icon>
+          <span>Reconcile relations</span>
+        </md-button>
+      </div>
+
+      <div class="social-migration-summary" v-if="getReconcileSummaryRows().length">
+        <div class="social-migration-summary-item" v-for="row in getReconcileSummaryRows()" :key="'reconcile-' + row.key">
+          <strong>{{row.value}}</strong>
+          <span>{{row.key}}</span>
+        </div>
+      </div>
+
+      <pre class="social-migration-result" v-if="reconciliationResult">{{JSON.stringify(reconciliationResult, null, 2)}}</pre>
+    </md-card-content>
+  </md-card>
 </div>
 `;

@@ -50,6 +50,7 @@ export default {
       try {
         const result = await this.getImportRequest();
         this.importResult = result;
+        this.reconciliationResult = null;
         this.successMessage = getImportSuccessMessage(result);
       } catch (e) {
         this.errorMessage = getErrorMessage(e, 'Could not start migration');
@@ -57,9 +58,25 @@ export default {
 
       this.loading = false;
     },
+    async reconcileRelations() {
+      this.loading = true;
+      this.errorMessage = null;
+      this.successMessage = null;
+
+      try {
+        const result = await this.getReconcileRequest();
+        this.reconciliationResult = result;
+        this.successMessage = getReconcileSuccessMessage(result);
+      } catch (e) {
+        this.errorMessage = getErrorMessage(e, 'Could not reconcile migration relations');
+      }
+
+      this.loading = false;
+    },
     resetPreviewState() {
       this.preview = null;
       this.importResult = null;
+      this.reconciliationResult = null;
       this.errorMessage = null;
       this.successMessage = null;
     },
@@ -74,6 +91,20 @@ export default {
         return this.$geesome.userActivityPubMigrationImport(this.getActivityPubInput(true));
       }
       return this.$geesome.userBlueskyMigrationImport(this.getBlueskyInput(true));
+    },
+    getReconcileRequest() {
+      const input = this.getReconcileInput();
+      if (this.sourceType === sourceTypes.ActivityPub) {
+        return this.$geesome.userActivityPubMigrationReconcileRelations(input);
+      }
+      return this.$geesome.userBlueskyMigrationReconcileRelations(input);
+    },
+    getReconcileInput() {
+      return {
+        groupName: this.targetGroupName.trim(),
+        limit: parsePositiveInteger(this.reconcileLimit) || 20,
+        dryRun: this.reconcileDryRun
+      };
     },
     getBlueskyInput(isImport) {
       const input: any = {
@@ -187,6 +218,12 @@ export default {
         .filter((key) => Number.isFinite(Number(summary[key])))
         .map((key) => ({key, value: summary[key]}));
     },
+    getReconcileSummaryRows() {
+      const result = this.reconciliationResult || {};
+      return ['checked', 'updated', 'skipped', 'failed']
+        .filter((key) => Number.isFinite(Number(result[key])))
+        .map((key) => ({key, value: result[key]}));
+    },
     getRuleLabel(rule) {
       return getRuleLabel(rule);
     }
@@ -246,6 +283,9 @@ export default {
       }
       return !this.selectedBlueskyAccountId;
     },
+    reconcileDisabled() {
+      return this.loading || !this.targetGroupName.trim();
+    },
     hasPreviewItems() {
       return this.previewItems.length > 0;
     }
@@ -272,8 +312,11 @@ export default {
       limit: 10,
       maxPages: 2,
       importAsync: true,
+      reconcileDryRun: true,
+      reconcileLimit: 20,
       preview: null,
       importResult: null,
+      reconciliationResult: null,
       loading: false,
       errorMessage: null,
       successMessage: null
@@ -287,6 +330,15 @@ function getImportSuccessMessage(result) {
   }
   const imported = readNumber(result && (result.imported || result.created || result.projectedPostsCount || result.cached));
   return `Migration started for ${imported} items`;
+}
+
+function getReconcileSuccessMessage(result) {
+  const updated = readNumber(result && result.updated);
+  const checked = readNumber(result && result.checked);
+  if (result && result.dryRun) {
+    return `Relation dry run checked ${checked} posts`;
+  }
+  return `Reconciled ${updated} post relations`;
 }
 
 function parsePositiveInteger(value) {

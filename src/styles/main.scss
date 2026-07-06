@@ -561,6 +561,14 @@ a.icon-link {
     margin-top: 12px;
   }
 
+  .social-migration-reconcile-form {
+    align-items: end;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(120px, auto) minmax(160px, 220px) auto;
+    margin-top: 12px;
+  }
+
   .social-migration-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));

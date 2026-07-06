@@ -348,12 +348,20 @@ export default {
         return geesomeClient.postRequest('soc-net/bluesky/migration/import', input).catch(this.onError);
       },
 
+      userBlueskyMigrationReconcileRelations(input: any = {}) {
+        return geesomeClient.postRequest('soc-net/bluesky/migration/reconcile-relations', input).catch(this.onError);
+      },
+
       userActivityPubMigrationPreview(input: any = {}) {
         return geesomeClient.postRequest('soc-net/activity-pub/migration/preview', input).catch(this.onError);
       },
 
       userActivityPubMigrationImport(input: any = {}) {
         return geesomeClient.postRequest('soc-net/activity-pub/migration/import', input).catch(this.onError);
+      },
+
+      userActivityPubMigrationReconcileRelations(input: any = {}) {
+        return geesomeClient.postRequest('soc-net/activity-pub/migration/reconcile-relations', input).catch(this.onError);
       },
 
       userBlueskyCrossPost(postId, input: any = {}) {
