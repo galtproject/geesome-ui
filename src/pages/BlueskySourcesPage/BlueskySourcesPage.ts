@@ -7,20 +7,16 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
+import {
+  defaultImportMediaPolicy,
+  defaultImportRelationPolicy,
+  getImportMediaPolicyInput,
+  getImportRelationPolicyInput,
+  getNonDefaultPolicyLabel
+} from '../../libs/socialImportPolicy';
+
 const defaultBlueskyActor = 'bsky.app';
 const defaultBlueskyFilter = 'posts_no_replies';
-const defaultImportMediaPolicy = {
-  images: 'preserve',
-  linkPreviews: 'preserve',
-  unsupportedEmbeds: 'preserve'
-};
-const defaultImportRelationPolicy = {
-  replies: 'preserve',
-  quotes: 'preserve',
-  reposts: 'preserve'
-};
-const importMediaPolicyValues = ['preserve', 'ignore', 'reject'];
-const importRelationPolicyValues = ['preserve', 'omit', 'reject'];
 
 export default {
   template: require('./BlueskySourcesPage.template'),
@@ -763,35 +759,4 @@ function getErrorMessage(error, fallback) {
   }
 
   return fallback;
-}
-
-function getImportMediaPolicyInput(policy: any = {}) {
-  return {
-    images: getAllowedPolicyValue(policy.images, importMediaPolicyValues, defaultImportMediaPolicy.images),
-    linkPreviews: getAllowedPolicyValue(policy.linkPreviews, importMediaPolicyValues, defaultImportMediaPolicy.linkPreviews),
-    unsupportedEmbeds: getAllowedPolicyValue(
-      policy.unsupportedEmbeds,
-      importMediaPolicyValues,
-      defaultImportMediaPolicy.unsupportedEmbeds
-    )
-  };
-}
-
-function getImportRelationPolicyInput(policy: any = {}) {
-  return {
-    replies: getAllowedPolicyValue(policy.replies, importRelationPolicyValues, defaultImportRelationPolicy.replies),
-    quotes: getAllowedPolicyValue(policy.quotes, importRelationPolicyValues, defaultImportRelationPolicy.quotes),
-    reposts: getAllowedPolicyValue(policy.reposts, importRelationPolicyValues, defaultImportRelationPolicy.reposts)
-  };
-}
-
-function getAllowedPolicyValue(value, allowedValues, fallback) {
-  return allowedValues.includes(value) ? value : fallback;
-}
-
-function getNonDefaultPolicyLabel(label, value, defaultValue) {
-  if (value === defaultValue) {
-    return null;
-  }
-  return `${label} ${value}`;
 }

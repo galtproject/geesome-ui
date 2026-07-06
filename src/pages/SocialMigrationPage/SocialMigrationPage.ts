@@ -1,3 +1,11 @@
+import {
+  defaultImportMediaPolicy,
+  defaultImportRelationPolicy,
+  getImportMediaPolicyInput,
+  getImportRelationPolicyInput,
+  getNonDefaultPolicyLabel
+} from '../../libs/socialImportPolicy';
+
 const sourceTypes = {
   Bluesky: 'bluesky',
   ActivityPub: 'activitypub'
@@ -80,6 +88,11 @@ export default {
       this.errorMessage = null;
       this.successMessage = null;
     },
+    resetReconcileScope() {
+      this.reconcileSourceChannelId = '';
+      this.reconcileCursorPublishedAt = '';
+      this.reconcileCursorId = '';
+    },
     getPreviewRequest() {
       if (this.sourceType === sourceTypes.ActivityPub) {
         return this.$geesome.userActivityPubMigrationPreview(this.getActivityPubInput(false));
@@ -100,11 +113,24 @@ export default {
       return this.$geesome.userBlueskyMigrationReconcileRelations(input);
     },
     getReconcileInput() {
-      return {
+      const input: any = {
         groupName: this.targetGroupName.trim(),
         limit: parsePositiveInteger(this.reconcileLimit) || 20,
-        dryRun: this.reconcileDryRun
+        dryRun: this.reconcileDryRun,
+        allowCrossGroup: this.reconcileAllowCrossGroup,
+        force: this.reconcileForce
       };
+      if (this.reconcileSourceChannelId.trim()) {
+        input.sourceChannelId = this.reconcileSourceChannelId.trim();
+      }
+      if (this.reconcileCursorPublishedAt.trim()) {
+        input.cursorPublishedAt = this.reconcileCursorPublishedAt.trim();
+      }
+      const cursorId = parsePositiveInteger(this.reconcileCursorId);
+      if (cursorId) {
+        input.cursorId = cursorId;
+      }
+      return input;
     },
     getBlueskyInput(isImport) {
       const input: any = {
@@ -119,6 +145,8 @@ export default {
         input.async = this.importAsync;
         input.maxPages = parsePositiveInteger(this.maxPages) || 1;
         input.moderationPolicy = this.getModerationPolicy();
+        input.mediaPolicy = getImportMediaPolicyInput(this.migrationMediaPolicy);
+        input.relationPolicy = getImportRelationPolicyInput(this.migrationRelationPolicy);
       }
       return input;
     },
@@ -147,8 +175,19 @@ export default {
         input.groupName = this.targetGroupName.trim();
         input.async = this.importAsync;
         input.moderationPolicy = this.getModerationPolicy();
+        input.mediaPolicy = getImportMediaPolicyInput(this.migrationMediaPolicy);
+        input.relationPolicy = getImportRelationPolicyInput(this.migrationRelationPolicy);
       }
       return input;
+    },
+    continueReconciliationFromNextCursor() {
+      const cursor = this.reconciliationResult && this.reconciliationResult.nextCursor;
+      if (!cursor) {
+        return;
+      }
+      this.reconcileCursorPublishedAt = cursor.publishedAt || '';
+      this.reconcileCursorId = cursor.id || '';
+      return this.reconcileRelations();
     },
     getModerationPolicy() {
       return {
@@ -224,6 +263,47 @@ export default {
         .filter((key) => Number.isFinite(Number(result[key])))
         .map((key) => ({key, value: result[key]}));
     },
+    getReconcileStatusRows() {
+      const counts = getReconcileStatusCounts(this.reconciliationResult);
+      return ['linked', 'missing', 'ambiguous', 'permission-blocked', 'already-linked', 'skipped']
+        .filter((key) => counts[key])
+        .map((key) => ({key, value: counts[key]}));
+    },
+    getReconcileRows() {
+      return this.reconciliationResult && Array.isArray(this.reconciliationResult.rows)
+        ? this.reconciliationResult.rows
+        : [];
+    },
+    getReconcileErrors() {
+      return this.reconciliationResult && Array.isArray(this.reconciliationResult.errors)
+        ? this.reconciliationResult.errors
+        : [];
+    },
+    getReconcileRowStatus(row) {
+      return getReconcileRowStatus(row);
+    },
+    getReconcileRowMeta(row) {
+      return getReconcileRowMeta(row);
+    },
+    getReconcileRowChangeText(row) {
+      return getReconcileRowChangeText(row);
+    },
+    getReconcileReasonLabel(reason) {
+      return getReconcileReasonLabel(reason);
+    },
+    getMigrationPolicyMeta() {
+      const mediaPolicy = getImportMediaPolicyInput(this.migrationMediaPolicy);
+      const relationPolicy = getImportRelationPolicyInput(this.migrationRelationPolicy);
+      const parts = [
+        getNonDefaultPolicyLabel('images', mediaPolicy.images, defaultImportMediaPolicy.images),
+        getNonDefaultPolicyLabel('links', mediaPolicy.linkPreviews, defaultImportMediaPolicy.linkPreviews),
+        getNonDefaultPolicyLabel('embeds', mediaPolicy.unsupportedEmbeds, defaultImportMediaPolicy.unsupportedEmbeds),
+        getNonDefaultPolicyLabel('replies', relationPolicy.replies, defaultImportRelationPolicy.replies),
+        getNonDefaultPolicyLabel('quotes', relationPolicy.quotes, defaultImportRelationPolicy.quotes),
+        getNonDefaultPolicyLabel('reposts', relationPolicy.reposts, defaultImportRelationPolicy.reposts)
+      ].filter(Boolean);
+      return parts.length ? `Policy: ${parts.join(' · ')}` : 'Policy: preserve source context';
+    },
     getRuleLabel(rule) {
       return getRuleLabel(rule);
     }
@@ -231,19 +311,29 @@ export default {
   watch: {
     sourceType() {
       this.resetPreviewState();
+      this.resetReconcileScope();
     },
     activityPubInputType() {
       if (this.activityPubInputType === activityPubInputTypes.BlueskyBridge) {
         this.activityPubSource = 'bsky.app';
       }
       this.resetPreviewState();
+      this.resetReconcileScope();
     },
     blueskyActor: 'resetPreviewState',
     selectedBlueskyAccountId: 'resetPreviewState',
     blueskyFilter: 'resetPreviewState',
     activityPubSource: 'resetPreviewState',
     limit: 'resetPreviewState',
-    maxPages: 'resetPreviewState'
+    maxPages: 'resetPreviewState',
+    migrationMediaPolicy: {
+      deep: true,
+      handler: 'resetPreviewState'
+    },
+    migrationRelationPolicy: {
+      deep: true,
+      handler: 'resetPreviewState'
+    }
   },
   computed: {
     isActivityPub() {
@@ -309,10 +399,17 @@ export default {
         action: 'block',
         value: ''
       },
+      migrationMediaPolicy: getImportMediaPolicyInput(),
+      migrationRelationPolicy: getImportRelationPolicyInput(),
       limit: 10,
       maxPages: 2,
       importAsync: true,
       reconcileDryRun: true,
+      reconcileAllowCrossGroup: true,
+      reconcileForce: false,
+      reconcileSourceChannelId: '',
+      reconcileCursorPublishedAt: '',
+      reconcileCursorId: '',
       reconcileLimit: 20,
       preview: null,
       importResult: null,
@@ -362,6 +459,70 @@ function getRuleLabel(rule) {
     rule && rule.value
   ].filter(Boolean);
   return parts.join(' · ');
+}
+
+function getReconcileStatusCounts(result) {
+  const counts: any = {
+    linked: 0,
+    missing: 0,
+    ambiguous: 0,
+    'permission-blocked': 0,
+    'already-linked': 0,
+    skipped: 0
+  };
+  const rows = result && Array.isArray(result.rows) ? result.rows : [];
+  rows.forEach((row) => {
+    counts[getReconcileRowStatus(row)] += 1;
+  });
+  return counts;
+}
+
+function getReconcileRowStatus(row) {
+  if (row && row.changes && Object.keys(row.changes).length) {
+    return 'linked';
+  }
+  const reason = String(row && row.reason || '').toLowerCase();
+  if (reason.indexOf('ambiguous') !== -1) {
+    return 'ambiguous';
+  }
+  if (reason.indexOf('not_permitted') !== -1 || reason.indexOf('permission') !== -1) {
+    return 'permission-blocked';
+  }
+  if (reason.indexOf('already_set') !== -1 || reason.indexOf('already_linked') !== -1) {
+    return 'already-linked';
+  }
+  if (reason.indexOf('missing') !== -1 || reason.indexOf('not_found') !== -1) {
+    return 'missing';
+  }
+  return 'skipped';
+}
+
+function getReconcileRowMeta(row) {
+  const parts = [
+    row && row.postId ? `post #${row.postId}` : null,
+    row && row.sourcePostId,
+    row && row.replyToId ? `reply ${row.replyToId}` : null,
+    row && row.repostOfId ? `quote ${row.repostOfId}` : null
+  ].filter(Boolean);
+  return parts.join(' · ');
+}
+
+function getReconcileRowChangeText(row) {
+  const changes = row && row.changes || {};
+  const parts = [
+    changes.replyToId ? `reply -> ${changes.replyToId}` : null,
+    changes.repostOfId ? `quote -> ${changes.repostOfId}` : null
+  ].filter(Boolean);
+  if (parts.length) {
+    return parts.join(' · ');
+  }
+  return getReconcileReasonLabel(row && row.reason);
+}
+
+function getReconcileReasonLabel(reason) {
+  return String(reason || 'no relation change')
+    .replace(/^(bluesky|activitypub)_migration_/, '')
+    .replace(/_/g, ' ');
 }
 
 function getErrorMessage(error, fallback) {

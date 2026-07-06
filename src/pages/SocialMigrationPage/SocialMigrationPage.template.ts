@@ -89,6 +89,64 @@ module.exports = `
         </md-field>
       </div>
 
+      <div class="social-migration-policy-builder" aria-label="Migration import policy">
+        <md-field>
+          <label>Images</label>
+          <md-select v-model="migrationMediaPolicy.images" :disabled="loading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="ignore">Ignore</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Link previews</label>
+          <md-select v-model="migrationMediaPolicy.linkPreviews" :disabled="loading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="ignore">Ignore</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Unsupported embeds</label>
+          <md-select v-model="migrationMediaPolicy.unsupportedEmbeds" :disabled="loading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="ignore">Ignore</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Replies</label>
+          <md-select v-model="migrationRelationPolicy.replies" :disabled="loading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="omit">Omit</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Quotes</label>
+          <md-select v-model="migrationRelationPolicy.quotes" :disabled="loading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="omit">Omit</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+
+        <md-field>
+          <label>Reposts</label>
+          <md-select v-model="migrationRelationPolicy.reposts" :disabled="loading">
+            <md-option value="preserve">Preserve</md-option>
+            <md-option value="omit">Omit</md-option>
+            <md-option value="reject">Reject</md-option>
+          </md-select>
+        </md-field>
+      </div>
+
+      <div class="activitypub-sources-muted social-migration-policy-meta">{{getMigrationPolicyMeta()}}</div>
+
       <div class="social-migration-rule-builder">
         <md-field>
           <label>Filter value</label>
@@ -201,10 +259,27 @@ module.exports = `
       <h2>Relation reconciliation</h2>
       <div class="social-migration-reconcile-form">
         <md-checkbox v-model="reconcileDryRun" :disabled="loading">Dry run</md-checkbox>
+        <md-checkbox v-model="reconcileAllowCrossGroup" :disabled="loading">Allow cross-group targets</md-checkbox>
+        <md-checkbox v-model="reconcileForce" :disabled="loading">Recompute existing</md-checkbox>
+
+        <md-field>
+          <label>Source channel</label>
+          <md-input v-model="reconcileSourceChannelId" :disabled="loading"></md-input>
+        </md-field>
 
         <md-field>
           <label>Reconcile limit</label>
           <md-input v-model="reconcileLimit" type="number" min="1" max="100" :disabled="loading"></md-input>
+        </md-field>
+
+        <md-field>
+          <label>Cursor timestamp</label>
+          <md-input v-model="reconcileCursorPublishedAt" :disabled="loading"></md-input>
+        </md-field>
+
+        <md-field>
+          <label>Cursor id</label>
+          <md-input v-model="reconcileCursorId" type="number" min="1" :disabled="loading"></md-input>
         </md-field>
 
         <md-button class="md-raised md-primary" @click="reconcileRelations" :disabled="reconcileDisabled">
@@ -220,7 +295,40 @@ module.exports = `
         </div>
       </div>
 
-      <pre class="social-migration-result" v-if="reconciliationResult">{{JSON.stringify(reconciliationResult, null, 2)}}</pre>
+      <div class="social-migration-summary social-migration-status-summary" v-if="getReconcileStatusRows().length">
+        <div class="social-migration-summary-item" v-for="row in getReconcileStatusRows()" :key="'status-' + row.key">
+          <strong>{{row.value}}</strong>
+          <span>{{row.key}}</span>
+        </div>
+      </div>
+
+      <div class="social-migration-reconcile-next" v-if="reconciliationResult && reconciliationResult.nextCursor">
+        <span class="activitypub-sources-muted">Next cursor {{reconciliationResult.nextCursor.publishedAt}} / {{reconciliationResult.nextCursor.id}}</span>
+        <md-button class="md-primary" @click="continueReconciliationFromNextCursor" :disabled="loading">
+          <md-icon class="fas fa-step-forward"></md-icon>
+          <span>Continue next page</span>
+        </md-button>
+      </div>
+
+      <div class="social-migration-reconcile-list" v-if="getReconcileRows().length">
+        <article class="social-migration-reconcile-row" v-for="row in getReconcileRows()" :key="row.postId + '-' + (row.sourcePostId || '')">
+          <div>
+            <strong>{{getReconcileRowChangeText(row)}}</strong>
+            <small>{{getReconcileRowMeta(row)}}</small>
+          </div>
+          <span :class="'activitypub-feed-state reconcile-' + getReconcileRowStatus(row)">{{getReconcileRowStatus(row)}}</span>
+        </article>
+      </div>
+
+      <div class="social-migration-reconcile-errors" v-if="getReconcileErrors().length">
+        <article class="social-migration-reconcile-row reconcile-error" v-for="error in getReconcileErrors()" :key="'error-' + (error.postId || error.sourcePostId || error.message)">
+          <div>
+            <strong>{{error.message}}</strong>
+            <small>{{getReconcileRowMeta(error)}}</small>
+          </div>
+          <span class="activitypub-feed-state review-rejected">failed</span>
+        </article>
+      </div>
     </md-card-content>
   </md-card>
 </div>
