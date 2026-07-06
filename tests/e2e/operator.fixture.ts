@@ -393,6 +393,16 @@ let blueskySources = [
     moderationRules: [
       {name: 'spam', type: 'keyword', field: 'text', action: 'block', value: 'spam'}
     ],
+    mediaPolicy: {
+      images: 'preserve',
+      linkPreviews: 'ignore',
+      unsupportedEmbeds: 'reject'
+    },
+    relationPolicy: {
+      replies: 'preserve',
+      quotes: 'omit',
+      reposts: 'reject'
+    },
     dbChannelId: 33,
     lastCursor: 'cursor-1',
     lastRefreshRequestedAt: '2026-06-03T09:00:00.000Z',
@@ -844,6 +854,8 @@ Vue.prototype.$geesome = {
       existingSource.importLimit = input && input.importLimit || existingSource.importLimit;
       existingSource.moderationMode = input && input.moderationMode || existingSource.moderationMode;
       existingSource.moderationRules = input && input.moderationRules || existingSource.moderationRules;
+      existingSource.mediaPolicy = input && input.mediaPolicy || existingSource.mediaPolicy;
+      existingSource.relationPolicy = input && input.relationPolicy || existingSource.relationPolicy;
       existingSource.status = 'active';
       return existingSource;
     }
@@ -859,6 +871,8 @@ Vue.prototype.$geesome = {
       importLimit: input && input.importLimit || 20,
       moderationMode: input && input.moderationMode || 'autoImport',
       moderationRules: input && input.moderationRules || [],
+      mediaPolicy: input && input.mediaPolicy || {},
+      relationPolicy: input && input.relationPolicy || {},
       dbChannelId: null,
       lastCursor: null,
       lastRefreshRequestedAt: null,
@@ -873,6 +887,30 @@ Vue.prototype.$geesome = {
     const source = blueskySources.find((item) => Number(item.id) === Number(sourceId));
     if (source && input && input.status) {
       source.status = input.status;
+    }
+    if (source && input && input.filter !== undefined) {
+      source.filter = input.filter;
+    }
+    if (source && input && input.displayName !== undefined) {
+      source.displayName = input.displayName;
+    }
+    if (source && input && input.groupName !== undefined) {
+      source.groupName = input.groupName;
+    }
+    if (source && input && input.importLimit !== undefined) {
+      source.importLimit = input.importLimit;
+    }
+    if (source && input && input.moderationMode !== undefined) {
+      source.moderationMode = input.moderationMode;
+    }
+    if (source && input && input.moderationRules !== undefined) {
+      source.moderationRules = input.moderationRules;
+    }
+    if (source && input && input.mediaPolicy !== undefined) {
+      source.mediaPolicy = input.mediaPolicy;
+    }
+    if (source && input && input.relationPolicy !== undefined) {
+      source.relationPolicy = input.relationPolicy;
     }
     return source;
   },

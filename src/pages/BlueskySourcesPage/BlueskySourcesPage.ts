@@ -9,6 +9,18 @@
 
 const defaultBlueskyActor = 'bsky.app';
 const defaultBlueskyFilter = 'posts_no_replies';
+const defaultImportMediaPolicy = {
+  images: 'preserve',
+  linkPreviews: 'preserve',
+  unsupportedEmbeds: 'preserve'
+};
+const defaultImportRelationPolicy = {
+  replies: 'preserve',
+  quotes: 'preserve',
+  reposts: 'preserve'
+};
+const importMediaPolicyValues = ['preserve', 'ignore', 'reject'];
+const importRelationPolicyValues = ['preserve', 'omit', 'reject'];
 
 export default {
   template: require('./BlueskySourcesPage.template'),
@@ -48,6 +60,30 @@ export default {
         await this.selectSourceById(source && source.id);
       } catch (e) {
         this.errorMessage = getErrorMessage(e, 'Could not subscribe to Bluesky source');
+      }
+
+      this.actionLoading = false;
+    },
+    async saveSelectedSourceSettings() {
+      if (!this.selectedSource || !this.selectedSource.id) {
+        return;
+      }
+
+      this.actionLoading = true;
+      this.errorMessage = null;
+      this.successMessage = null;
+
+      try {
+        const source = await this.$geesome.adminUpdateBlueskySourceSubscription(
+          this.selectedSource.id,
+          this.getSourceUpdateInput()
+        );
+        this.selectedSource = source || this.selectedSource;
+        this.replaceSource(this.selectedSource);
+        this.setSourceFormFromSelectedSource();
+        this.successMessage = `Saved ${this.getSourceTitle(this.selectedSource)}`;
+      } catch (e) {
+        this.errorMessage = getErrorMessage(e, 'Could not save Bluesky source settings');
       }
 
       this.actionLoading = false;
@@ -228,7 +264,11 @@ export default {
       this.successMessage = null;
 
       try {
-        const result = await this.$geesome.adminImportBlueskySourceReview(this.selectedSource.id, review.id, {});
+        const result = await this.$geesome.adminImportBlueskySourceReview(
+          this.selectedSource.id,
+          review.id,
+          this.getSourcePolicyInput()
+        );
         this.selectedSource = result && result.source ? result.source : this.selectedSource;
         this.replaceSource(this.selectedSource);
         this.successMessage = getReviewImportSuccessMessage(result);
@@ -300,12 +340,26 @@ export default {
       this.sourceImportLimit = source.importLimit || this.sourceImportLimit;
       this.moderationMode = source.moderationMode || this.moderationMode;
       this.moderationRules = Array.isArray(source.moderationRules) ? source.moderationRules : [];
+      this.sourceMediaPolicy = getImportMediaPolicyInput(source.mediaPolicy);
+      this.sourceRelationPolicy = getImportRelationPolicyInput(source.relationPolicy);
     },
     getSourceInput() {
       const input: any = {
         actor: this.sourceActor.trim(),
+        ...this.getSourcePreferencesInput(false)
+      };
+
+      return input;
+    },
+    getSourceUpdateInput() {
+      return this.getSourcePreferencesInput(true);
+    },
+    getSourcePreferencesInput(includeEmptyValues) {
+      const input: any = {
         filter: this.sourceFilter,
-        moderationMode: this.moderationMode
+        moderationMode: this.moderationMode,
+        moderationRules: this.moderationRules,
+        ...this.getSourcePolicyInput()
       };
       const displayName = this.sourceDisplayName.trim();
       const groupName = this.sourceGroupName.trim();
@@ -313,21 +367,30 @@ export default {
 
       if (displayName) {
         input.displayName = displayName;
+      } else if (includeEmptyValues) {
+        input.displayName = '';
       }
       if (groupName) {
         input.groupName = groupName;
+      } else if (includeEmptyValues) {
+        input.groupName = '';
       }
       if (importLimit) {
         input.importLimit = importLimit;
-      }
-      if (this.moderationRules.length) {
-        input.moderationRules = this.moderationRules;
+      } else if (includeEmptyValues) {
+        input.importLimit = null;
       }
 
       return input;
     },
+    getSourcePolicyInput() {
+      return {
+        mediaPolicy: getImportMediaPolicyInput(this.sourceMediaPolicy),
+        relationPolicy: getImportRelationPolicyInput(this.sourceRelationPolicy)
+      };
+    },
     getRefreshInput() {
-      const input: any = {};
+      const input: any = this.getSourcePolicyInput();
       const importLimit = parsePositiveInteger(this.sourceImportLimit);
 
       if (this.sourceFilter) {
@@ -350,6 +413,9 @@ export default {
     },
     getSourceMeta(source) {
       return getSourceMeta(source);
+    },
+    getSourcePolicyMeta(source) {
+      return getSourcePolicyMeta(source);
     },
     getSourceInitials(source) {
       const title = this.getSourceTitle(source);
@@ -420,6 +486,9 @@ export default {
     subscribeDisabled() {
       return this.actionLoading || this.loadingSources || !this.sourceActor.trim();
     },
+    saveSettingsDisabled() {
+      return this.actionLoading || !this.selectedSource || !this.selectedSource.id;
+    },
     selectedSourcePaused() {
       return this.selectedSource && this.selectedSource.status === 'paused';
     },
@@ -445,6 +514,8 @@ export default {
       sourceImportLimit: 20,
       moderationMode: 'autoImport',
       moderationRules: [],
+      sourceMediaPolicy: getImportMediaPolicyInput(),
+      sourceRelationPolicy: getImportRelationPolicyInput(),
       newRule: {
         type: 'keyword',
         field: 'text',
@@ -480,6 +551,20 @@ function getSourceMeta(source) {
     source.moderationMode
   ].filter(Boolean);
   return parts.join(' · ');
+}
+
+function getSourcePolicyMeta(source) {
+  const mediaPolicy = getImportMediaPolicyInput(source && source.mediaPolicy);
+  const relationPolicy = getImportRelationPolicyInput(source && source.relationPolicy);
+  const parts = [
+    getNonDefaultPolicyLabel('images', mediaPolicy.images, defaultImportMediaPolicy.images),
+    getNonDefaultPolicyLabel('links', mediaPolicy.linkPreviews, defaultImportMediaPolicy.linkPreviews),
+    getNonDefaultPolicyLabel('embeds', mediaPolicy.unsupportedEmbeds, defaultImportMediaPolicy.unsupportedEmbeds),
+    getNonDefaultPolicyLabel('replies', relationPolicy.replies, defaultImportRelationPolicy.replies),
+    getNonDefaultPolicyLabel('quotes', relationPolicy.quotes, defaultImportRelationPolicy.quotes),
+    getNonDefaultPolicyLabel('reposts', relationPolicy.reposts, defaultImportRelationPolicy.reposts)
+  ].filter(Boolean);
+  return parts.length ? `Policy: ${parts.join(' · ')}` : 'Policy: preserve source context';
 }
 
 function getSourceRefreshText(source) {
@@ -678,4 +763,35 @@ function getErrorMessage(error, fallback) {
   }
 
   return fallback;
+}
+
+function getImportMediaPolicyInput(policy: any = {}) {
+  return {
+    images: getAllowedPolicyValue(policy.images, importMediaPolicyValues, defaultImportMediaPolicy.images),
+    linkPreviews: getAllowedPolicyValue(policy.linkPreviews, importMediaPolicyValues, defaultImportMediaPolicy.linkPreviews),
+    unsupportedEmbeds: getAllowedPolicyValue(
+      policy.unsupportedEmbeds,
+      importMediaPolicyValues,
+      defaultImportMediaPolicy.unsupportedEmbeds
+    )
+  };
+}
+
+function getImportRelationPolicyInput(policy: any = {}) {
+  return {
+    replies: getAllowedPolicyValue(policy.replies, importRelationPolicyValues, defaultImportRelationPolicy.replies),
+    quotes: getAllowedPolicyValue(policy.quotes, importRelationPolicyValues, defaultImportRelationPolicy.quotes),
+    reposts: getAllowedPolicyValue(policy.reposts, importRelationPolicyValues, defaultImportRelationPolicy.reposts)
+  };
+}
+
+function getAllowedPolicyValue(value, allowedValues, fallback) {
+  return allowedValues.includes(value) ? value : fallback;
+}
+
+function getNonDefaultPolicyLabel(label, value, defaultValue) {
+  if (value === defaultValue) {
+    return null;
+  }
+  return `${label} ${value}`;
 }

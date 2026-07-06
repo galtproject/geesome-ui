@@ -35,6 +35,10 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
   await expect(page.getByRole('heading', {name: 'Review queue'})).toBeVisible();
   await expect(page.getByText('Review-first Bluesky post waiting for import.')).toBeVisible();
   await expect(page.getByText('Quarantined Bluesky post waiting for admin decision.')).toBeVisible();
+  await expect(page.getByLabel('Bluesky import policy')).toBeVisible();
+  await expect(page.getByText('Policy: links ignore · embeds reject · quotes omit · reposts reject').first()).toBeVisible();
+  await expect(page.getByText('Link previews')).toBeVisible();
+  await expect(page.getByText('Unsupported embeds')).toBeVisible();
   await expect(page.getByRole('button', {name: 'Subscribe source'})).toBeVisible();
 
   await page.getByLabel('Rule value').fill('giveaway spam');
@@ -42,8 +46,32 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
   await expect(page.getByText('block · keyword · text · giveaway spam')).toBeVisible();
   await saveShot(page, 'bluesky-sources-mobile.png');
 
+  await page.getByRole('button', {name: 'Save settings'}).click();
+  await expect(page.getByText('Saved @bsky.app')).toBeVisible();
+
   await page.getByRole('button', {name: 'Subscribe source'}).click();
   await expect(page.getByText('Subscribed @bsky.app')).toBeVisible();
+
+  const saveCalls = await calls(page, 'adminUpdateBlueskySourceSubscription');
+  expect(saveCalls[0].input).toMatchObject({
+    filter: 'posts_no_replies',
+    groupName: 'bluesky-bsky-app',
+    importLimit: 20,
+    moderationMode: 'autoImport',
+    mediaPolicy: {
+      images: 'preserve',
+      linkPreviews: 'ignore',
+      unsupportedEmbeds: 'reject'
+    },
+    relationPolicy: {
+      replies: 'preserve',
+      quotes: 'omit',
+      reposts: 'reject'
+    }
+  });
+  expect(saveCalls[0].input.moderationRules).toEqual(expect.arrayContaining([
+    expect.objectContaining({type: 'keyword', field: 'text', action: 'block', value: 'giveaway spam'})
+  ]));
 
   const subscribeCalls = await calls(page, 'adminSubscribeBlueskySource');
   expect(subscribeCalls[0].input).toMatchObject({
@@ -51,7 +79,17 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
     filter: 'posts_no_replies',
     groupName: 'bluesky-bsky-app',
     importLimit: 20,
-    moderationMode: 'autoImport'
+    moderationMode: 'autoImport',
+    mediaPolicy: {
+      images: 'preserve',
+      linkPreviews: 'ignore',
+      unsupportedEmbeds: 'reject'
+    },
+    relationPolicy: {
+      replies: 'preserve',
+      quotes: 'omit',
+      reposts: 'reject'
+    }
   });
   expect(subscribeCalls[0].input.moderationRules).toEqual(expect.arrayContaining([
     expect.objectContaining({type: 'keyword', field: 'text', action: 'block', value: 'giveaway spam'})
@@ -60,6 +98,19 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
   await page.getByRole('button', {name: 'Refresh from Bluesky'}).click();
   await expect(page.getByText('Fetched 2, imported 1')).toBeVisible();
   await expect.poll(async () => (await calls(page, 'adminRefreshBlueskySourceSubscription')).length).toBe(1);
+  const refreshCalls = await calls(page, 'adminRefreshBlueskySourceSubscription');
+  expect(refreshCalls[0].input).toMatchObject({
+    mediaPolicy: {
+      images: 'preserve',
+      linkPreviews: 'ignore',
+      unsupportedEmbeds: 'reject'
+    },
+    relationPolicy: {
+      replies: 'preserve',
+      quotes: 'omit',
+      reposts: 'reject'
+    }
+  });
 
   await page.setViewportSize(DESKTOP_VIEWPORT);
   await expect(page.getByText('https://bsky.app/profile/bsky.app/post/abc')).toBeVisible();
@@ -85,11 +136,26 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
   const reviewCalls = await calls(page, 'adminGetBlueskySourceReviews');
   expect(reviewCalls[0].filters).toMatchObject({limit: 20, offset: 0});
   const importReviewCalls = await calls(page, 'adminImportBlueskySourceReview');
-  expect(importReviewCalls[0]).toMatchObject({sourceId: 801, reviewId: 951, input: {}});
+  expect(importReviewCalls[0]).toMatchObject({
+    sourceId: 801,
+    reviewId: 951,
+    input: {
+      mediaPolicy: {
+        images: 'preserve',
+        linkPreviews: 'ignore',
+        unsupportedEmbeds: 'reject'
+      },
+      relationPolicy: {
+        replies: 'preserve',
+        quotes: 'omit',
+        reposts: 'reject'
+      }
+    }
+  });
   const reviewStateCalls = await calls(page, 'adminUpdateBlueskySourceReviewState');
   expect(reviewStateCalls[0]).toMatchObject({sourceId: 801, reviewId: 952, input: {state: 'rejected'}});
   const syncCalls = await calls(page, 'adminSyncBlueskySourcePosts');
   expect(syncCalls[0].input).toMatchObject({limit: 20});
   const updateCalls = await calls(page, 'adminUpdateBlueskySourceSubscription');
-  expect(updateCalls[0].input).toMatchObject({status: 'paused'});
+  expect(updateCalls[updateCalls.length - 1].input).toMatchObject({status: 'paused'});
 });
