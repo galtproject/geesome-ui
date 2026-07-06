@@ -9,6 +9,7 @@ import ContentManifestItem from '../../src/directives/ContentManifestItem/Conten
 import ActivityPubRemoteObjectsPage from '../../src/pages/GroupPage/ActivityPubRemoteObjectsPage/ActivityPubRemoteObjectsPage';
 import ActivityPubSourcesPage from '../../src/pages/ActivityPubSourcesPage/ActivityPubSourcesPage';
 import BlueskySourcesPage from '../../src/pages/BlueskySourcesPage/BlueskySourcesPage';
+import SocialMigrationPage from '../../src/pages/SocialMigrationPage/SocialMigrationPage';
 import UploadContent from '../../src/directives/UploadContent/UploadContent';
 import AddSocNetClientModal from '../../src/pages/UsersSection/modals/AddSocNetClientModal/AddSocNetClientModal';
 
@@ -177,6 +178,91 @@ const blueskyPostFixture = {
       extension: 'html'
     }
   }]
+};
+const socialMigrationBlueskyPreview = {
+  actor: 'bsky.app',
+  cursor: 'cursor-preview',
+  ownership: {
+    claimed: true,
+    verified: true,
+    method: 'storedAccount',
+    actor: 'bsky.app',
+    reason: null
+  },
+  summary: {
+    total: 2,
+    localPosts: 1,
+    remoteContextPosts: 1,
+    replies: 1,
+    reposts: 1,
+    quotes: 0,
+    remotePlaceholders: 2
+  },
+  list: [
+    {
+      uri: 'at://did:plc:bsky/app.bsky.feed.post/root',
+      importKind: 'localPost',
+      relationTypes: ['post'],
+      preview: {
+        name: 'Bluesky migration root',
+        contentText: 'Own Bluesky post ready for GeeSome.'
+      }
+    },
+    {
+      uri: 'at://did:plc:other/app.bsky.feed.post/reply',
+      importKind: 'remoteContext',
+      relationTypes: ['reply'],
+      preview: {
+        name: 'Remote reply context',
+        contentText: 'Reply from another account kept as context.'
+      }
+    }
+  ]
+};
+const socialMigrationActivityPubPreview = {
+  actor: 'https://remote.example/users/alice',
+  sourceActorUrl: 'https://remote.example/users/alice',
+  ownership: {
+    claimed: true,
+    verified: true,
+    method: 'profileToken',
+    actor: 'https://remote.example/users/alice',
+    reason: null
+  },
+  summary: {
+    total: 2,
+    localPosts: 1,
+    remoteContextPosts: 1,
+    replies: 1,
+    announces: 0,
+    quotes: 0,
+    mentions: 0,
+    remoteActors: 1,
+    remoteObjects: 1,
+    remotePlaceholders: 2
+  },
+  list: [
+    {
+      objectId: 'https://remote.example/objects/root',
+      objectType: 'Note',
+      importKind: 'localPost',
+      relationTypes: ['post'],
+      preview: {
+        name: 'ActivityPub migration root',
+        contentText: 'Own ActivityPub post ready for GeeSome.'
+      }
+    },
+    {
+      objectId: 'https://other.example/objects/reply',
+      objectType: 'Note',
+      importKind: 'remoteContext',
+      relationTypes: ['reply'],
+      preview: {
+        name: 'Remote reply context',
+        contentText: 'ActivityPub reply kept as context.'
+      }
+    }
+  ]
 };
 const activityPubGroup = {
   id: 31,
@@ -455,6 +541,38 @@ Vue.prototype.$geesome = {
       },
       did: blueskyCrossPostAccount.accountId,
       handle: blueskyCrossPostAccount.username
+    };
+  },
+  async userBlueskyMigrationPreview(input) {
+    calls.push({type: 'userBlueskyMigrationPreview', input});
+    return socialMigrationBlueskyPreview;
+  },
+  async userBlueskyMigrationImport(input) {
+    calls.push({type: 'userBlueskyMigrationImport', input});
+    if (input && input.async) {
+      return {id: 77, module: 'bluesky-migration-import', userApiKeyId: 12};
+    }
+    return {
+      projectedPostsCount: 2,
+      imported: 1,
+      dbChannel: {id: 33, groupId: 31, title: '@bsky.app'}
+    };
+  },
+  async userActivityPubMigrationPreview(input) {
+    calls.push({type: 'userActivityPubMigrationPreview', input});
+    return socialMigrationActivityPubPreview;
+  },
+  async userActivityPubMigrationImport(input) {
+    calls.push({type: 'userActivityPubMigrationImport', input});
+    if (input && input.async) {
+      return {id: 78, module: 'activitypub-migration-import', userApiKeyId: 12};
+    }
+    return {
+      cached: 2,
+      created: 1,
+      skipped: 1,
+      postIds: [88],
+      remoteObjectIds: [501, 502]
     };
   },
   async getUserPinAccounts() {
@@ -905,10 +1023,11 @@ Vue.prototype.$geesome = {
 (window as any).__BLUESKY_SOURCES_E2E__ = {calls, blueskySources, blueskyFeedItems, blueskyReviewItems};
 (window as any).__BLUESKY_POST_ACTIONS_E2E__ = {calls, blueskyCrossPostAccount, blueskyPostFixture};
 (window as any).__BLUESKY_ACCOUNT_E2E__ = {calls, blueskyCrossPostAccount};
+(window as any).__SOCIAL_MIGRATION_E2E__ = {calls, socialMigrationBlueskyPreview, socialMigrationActivityPubPreview};
 
 new Vue({
   el: '#app',
-  components: {PinServices, PostItem, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, AddSocNetClientModal},
+  components: {PinServices, PostItem, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, SocialMigrationPage, AddSocNetClientModal},
   data() {
     return {
       currentPage: getCurrentPage(),
@@ -945,6 +1064,7 @@ new Vue({
       <storage-space-page v-else-if="currentPage === 'storage-space'" />
       <activity-pub-sources-page v-else-if="currentPage === 'activitypub-sources'" />
       <bluesky-sources-page v-else-if="currentPage === 'bluesky-sources'" />
+      <social-migration-page v-else-if="currentPage === 'social-migration'" />
       <activity-pub-remote-objects-page v-else-if="currentPage === 'activitypub'" :group="activityPubGroup" />
       <pin-services v-else />
     </main>
@@ -975,6 +1095,9 @@ function getCurrentPage() {
   }
   if (window.location.hash === '#bluesky-sources') {
     return 'bluesky-sources';
+  }
+  if (window.location.hash === '#social-migration') {
+    return 'social-migration';
   }
   return 'pin-services';
 }

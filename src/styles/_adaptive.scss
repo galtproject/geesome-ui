@@ -161,6 +161,22 @@
     }
   }
 
+  .social-migration-page {
+    .social-migration-form {
+      grid-template-columns: 1fr;
+    }
+
+    .social-migration-actions {
+      align-items: stretch;
+      flex-direction: column;
+
+      .md-button {
+        margin-left: 0;
+        margin-right: 0;
+      }
+    }
+  }
+
   .wide-content {
     width: 100%;
   }

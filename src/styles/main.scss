@@ -515,6 +515,54 @@ a.icon-link {
   }
 }
 
+.social-migration-page {
+  .social-migration-form {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(170px, 1fr));
+    gap: 12px;
+    align-items: end;
+  }
+
+  .social-migration-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .social-migration-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin: 14px 0;
+  }
+
+  .social-migration-summary-item {
+    background: #19161c;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    padding: 10px;
+
+    strong,
+    span {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .social-migration-preview-item {
+    margin-top: 10px;
+  }
+
+  .social-migration-result {
+    background: #19161c;
+    overflow: auto;
+    padding: 10px;
+    white-space: pre-wrap;
+  }
+}
+
 .md-app-content {
   .new-post-card {
     margin-right: 0;

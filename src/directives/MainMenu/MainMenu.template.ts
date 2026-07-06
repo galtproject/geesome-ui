@@ -46,6 +46,11 @@ module.exports = `
       <span class="md-list-item-text" v-locale="localeKey + '.bluesky_sources'"></span>
     </md-list-item>
 
+    <md-list-item :to="{name: 'social-migration'}" v-if="user">
+      <md-icon class="fas fa-file-import"></md-icon>
+      <span class="md-list-item-text" v-locale="localeKey + '.social_migration'"></span>
+    </md-list-item>
+
     <md-list-item :to="{name: 'admined-groups'}" v-if="user">
       <md-icon class="fas fa-users-cog"></md-icon>
       <span class="md-list-item-text" v-locale="localeKey + '.administration_groups'"></span>
