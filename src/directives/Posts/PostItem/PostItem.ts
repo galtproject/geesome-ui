@@ -12,6 +12,20 @@ import CybLinkKeywordsModal from "../../../modals/CybLinkKeywordsModal/CybLinkKe
 
 const _ = require('lodash');
 const moment = require('moment');
+const defaultBlueskyCrossPostMediaPolicy = {
+  images: 'upload',
+  imageUploadFailure: 'link',
+  attachments: 'card',
+  linkPreviews: 'card'
+};
+const defaultBlueskyCrossPostRelationPolicy = {
+  replies: 'require',
+  quotes: 'require'
+};
+const blueskyCrossPostImagePolicyValues = ['upload', 'link', 'reject'];
+const blueskyCrossPostImageUploadFailurePolicyValues = ['link', 'reject'];
+const blueskyCrossPostFallbackPolicyValues = ['card', 'link', 'reject', 'ignore'];
+const blueskyCrossPostRelationPolicyValues = ['require', 'omit'];
 
 export default {
   template: require('./PostItem.template'),
@@ -72,7 +86,7 @@ export default {
     },
     async deleteBlueskyCrossPost() {
       await this.runBlueskyAction(
-        () => this.$geesome.userBlueskyDeleteCrossPost(this.value.id, this.getBlueskyActionInput()),
+        () => this.$geesome.userBlueskyDeleteCrossPost(this.value.id, this.getBlueskyActionInput({includePolicy: false})),
         () => 'Deleted Bluesky post',
         {removeRecord: true}
       );
@@ -100,13 +114,17 @@ export default {
 
       this.blueskyActionLoading = false;
     },
-    getBlueskyActionInput() {
+    getBlueskyActionInput(options: any = {}) {
       const input: any = {
         accountData: {id: this.selectedBlueskyAccount.id}
       };
       const appPassword = this.blueskyAppPassword.trim();
       if (appPassword) {
         input.appPassword = appPassword;
+      }
+      if (options.includePolicy !== false) {
+        input.mediaPolicy = getBlueskyCrossPostMediaPolicyInput(this.blueskyMediaPolicy);
+        input.relationPolicy = getBlueskyCrossPostRelationPolicyInput(this.blueskyRelationPolicy);
       }
       return input;
     },
@@ -236,6 +254,8 @@ export default {
       blueskyAccounts: [],
       selectedBlueskyAccountId: null,
       blueskyAppPassword: '',
+      blueskyMediaPolicy: getDefaultBlueskyCrossPostMediaPolicy(),
+      blueskyRelationPolicy: getDefaultBlueskyCrossPostRelationPolicy(),
       blueskyLoadingAccounts: false,
       blueskyActionLoading: false,
       blueskyErrorMessage: null,
@@ -261,6 +281,58 @@ function getPostProperties(post) {
 
 function getPlainObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function getDefaultBlueskyCrossPostMediaPolicy() {
+  return {...defaultBlueskyCrossPostMediaPolicy};
+}
+
+function getDefaultBlueskyCrossPostRelationPolicy() {
+  return {...defaultBlueskyCrossPostRelationPolicy};
+}
+
+function getBlueskyCrossPostMediaPolicyInput(policy: any = {}) {
+  return {
+    images: getAllowedPolicyValue(
+      policy.images,
+      blueskyCrossPostImagePolicyValues,
+      defaultBlueskyCrossPostMediaPolicy.images
+    ),
+    imageUploadFailure: getAllowedPolicyValue(
+      policy.imageUploadFailure,
+      blueskyCrossPostImageUploadFailurePolicyValues,
+      defaultBlueskyCrossPostMediaPolicy.imageUploadFailure
+    ),
+    attachments: getAllowedPolicyValue(
+      policy.attachments,
+      blueskyCrossPostFallbackPolicyValues,
+      defaultBlueskyCrossPostMediaPolicy.attachments
+    ),
+    linkPreviews: getAllowedPolicyValue(
+      policy.linkPreviews,
+      blueskyCrossPostFallbackPolicyValues,
+      defaultBlueskyCrossPostMediaPolicy.linkPreviews
+    )
+  };
+}
+
+function getBlueskyCrossPostRelationPolicyInput(policy: any = {}) {
+  return {
+    replies: getAllowedPolicyValue(
+      policy.replies,
+      blueskyCrossPostRelationPolicyValues,
+      defaultBlueskyCrossPostRelationPolicy.replies
+    ),
+    quotes: getAllowedPolicyValue(
+      policy.quotes,
+      blueskyCrossPostRelationPolicyValues,
+      defaultBlueskyCrossPostRelationPolicy.quotes
+    )
+  };
+}
+
+function getAllowedPolicyValue(value, allowedValues, fallback) {
+  return allowedValues.includes(value) ? value : fallback;
 }
 
 function hasPostRelation(post, idField, objectField) {
