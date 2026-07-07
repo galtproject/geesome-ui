@@ -54,6 +54,7 @@ async function main() {
   const playwrightBin = path.join(repoRoot, 'node_modules/.bin/playwright');
   const specArgs = args.screens ? [
     'tests/e2e/pin-services.spec.js',
+    'tests/e2e/new-post-rich-text.spec.js',
     'tests/e2e/post-html-safety.spec.js',
     'tests/e2e/storage-space.spec.js',
     'tests/e2e/activitypub-review.spec.js',
