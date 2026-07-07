@@ -30,6 +30,11 @@ test('post component sanitizes rendered text html (dual viewport)', async ({page
   await expect(page.getByText('safe link')).toBeVisible();
   await expect(page.getByText('ipfs link')).toBeVisible();
   await expect(page.getByText('unstyled text')).toBeVisible();
+  await expect(page.getByText('Rich hello formatted')).toBeVisible();
+  await expect(page.getByText('safe rich link')).toBeVisible();
+  await expect(page.getByText('unsafe rich link')).toBeVisible();
+  await expect(page.getByText('quoted rich text')).toBeVisible();
+  await expect(page.getByText('first rich item')).toBeVisible();
   await expect(page.locator('.post-card script')).toHaveCount(0);
   await expect(page.locator('.post-card iframe')).toHaveCount(0);
 
@@ -38,12 +43,16 @@ test('post component sanitizes rendered text html (dual viewport)', async ({page
   expect(postHtml).not.toContain('javascript:');
   expect(postHtml).not.toContain('style="color:red"');
   expect(postHtml).toContain('<strong>safe post</strong>');
+  expect(postHtml).toContain('<strong>formatted</strong>');
   expect(postHtml).toMatch(/<a[^>]+href="https:\/\/example\.com\/safe"[^>]*>safe link<\/a>/);
   expect(postHtml).toMatch(/<a[^>]+href="ipfs:\/\/bafybeigdyrzt"[^>]*>ipfs link<\/a>/);
+  expect(postHtml).toMatch(/<a[^>]+href="https:\/\/example\.com\/rich"[^>]*>safe rich link<\/a>/);
+  expect(postHtml).not.toMatch(/<a[^>]*>unsafe rich link<\/a>/);
   await saveShot(page, 'post-html-safety-mobile.png');
 
   await page.setViewportSize(DESKTOP_VIEWPORT);
   await expect(page.getByText('Hello safe post')).toBeVisible();
+  await expect(page.getByText('safe rich link')).toBeVisible();
   postHtml = await getPostHtml(page);
   expect(postHtml).not.toContain('window.__geesomePostXss');
   expect(postHtml).not.toContain('<iframe');

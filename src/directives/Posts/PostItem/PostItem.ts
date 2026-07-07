@@ -9,6 +9,7 @@
 
 import ImageModal from "../../../modals/ImageModal/ImageModal";
 import CybLinkKeywordsModal from "../../../modals/CybLinkKeywordsModal/CybLinkKeywordsModal";
+import {isRichTextDocument, richTextToSafeHtml} from "../../../libs/richText";
 
 const _ = require('lodash');
 const moment = require('moment');
@@ -180,6 +181,12 @@ export default {
     },
     setPostProperties(properties) {
       this.$set(this.value, 'propertiesJson', properties);
+    },
+    isRichTextContent(content) {
+      return isRichTextDocument(content && content.json);
+    },
+    renderRichTextContent(content) {
+      return richTextToSafeHtml(content && content.json);
     },
     link() {
       this.$root.$asyncModal.open({

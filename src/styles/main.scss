@@ -687,6 +687,31 @@ a.icon-link {
   }
 }
 
+.post-rich-text {
+  overflow-wrap: anywhere;
+
+  p:first-child,
+  blockquote:first-child,
+  pre:first-child,
+  ul:first-child,
+  ol:first-child {
+    margin-top: 0;
+  }
+
+  p:last-child,
+  blockquote:last-child,
+  pre:last-child,
+  ul:last-child,
+  ol:last-child {
+    margin-bottom: 0;
+  }
+
+  pre {
+    overflow-x: auto;
+    white-space: pre-wrap;
+  }
+}
+
 .bluesky-cross-post-controls {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 8px 16px 16px;

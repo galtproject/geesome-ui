@@ -24,6 +24,14 @@ async function calls(page, type) {
   }, type);
 }
 
+function visibleBlueskyIdentifierInput(page) {
+  return page.locator('input[name=bluesky_identifier]:visible');
+}
+
+function visibleBlueskyAppPasswordInput(page) {
+  return page.locator('input[name=bluesky_app_password]:visible');
+}
+
 test('Bluesky account modal connects and verifies credentials without exposing secrets', async ({page, baseURL}) => {
   await page.setViewportSize(MOBILE_VIEWPORT);
   await page.goto(`${baseURL}/#bluesky-account-connect`);
@@ -33,8 +41,8 @@ test('Bluesky account modal connects and verifies credentials without exposing s
   await expect(page.getByText('Encrypt app password with API token')).toBeVisible();
   await expect(page.getByRole('button', {name: 'Connect Bluesky'})).toBeDisabled();
 
-  await page.getByLabel('Handle or DID').fill('newartist.bsky.social');
-  await page.locator('input[name=bluesky_app_password]').fill('app-password-123');
+  await visibleBlueskyIdentifierInput(page).fill('newartist.bsky.social');
+  await visibleBlueskyAppPasswordInput(page).fill('app-password-123');
   await expect(page.getByRole('button', {name: 'Connect Bluesky'})).toBeEnabled();
   await saveShot(page, 'bluesky-account-connect-mobile.png');
 
@@ -50,12 +58,12 @@ test('Bluesky account modal connects and verifies credentials without exposing s
   await expect.poll(async () => (await calls(page, 'asyncModalClose')).length).toBe(1);
 
   await page.setViewportSize(DESKTOP_VIEWPORT);
-  await page.goto(`${baseURL}/#bluesky-account-verify`);
+  await page.goto(`${baseURL}/?scenario=verify#bluesky-account-verify`);
   await expect(page.getByRole('heading', {name: 'Bluesky account verify'})).toBeVisible();
-  await expect(page.getByLabel('Handle or DID')).toHaveValue('artist.bsky.social');
+  await expect(visibleBlueskyIdentifierInput(page)).toHaveValue('artist.bsky.social');
   await expect(page.getByRole('button', {name: 'Verify'})).toBeDisabled();
 
-  await page.locator('input[name=bluesky_app_password]').fill('verify-password-456');
+  await visibleBlueskyAppPasswordInput(page).fill('verify-password-456');
   await expect(page.getByRole('button', {name: 'Verify'})).toBeEnabled();
   await saveShot(page, 'bluesky-account-verify-desktop.png');
 

@@ -134,6 +134,41 @@ const postFixtureContent = [
   '<iframe src="https://example.com/embed"></iframe>',
   '<span style="color:red">unstyled text</span>'
 ].join('');
+const postFixtureRichTextContent = {
+  type: 'geesome.richText',
+  version: 1,
+  blocks: [
+    {
+      type: 'paragraph',
+      children: [
+        {text: 'Rich hello '},
+        {text: 'formatted', marks: [{type: 'strong'}]},
+        {text: ' with '},
+        {
+          text: 'safe rich link',
+          marks: [{type: 'link', href: 'https://example.com/rich', title: 'Rich safe link'}]
+        },
+        {text: ' and unsafe rich link', marks: [{type: 'link', href: 'javascript:alert(3)'}]}
+      ]
+    },
+    {
+      type: 'blockquote',
+      children: [{text: 'quoted rich text'}]
+    },
+    {
+      type: 'codeBlock',
+      text: '<script>window.__geesomeRichTextXss = true</script>'
+    },
+    {
+      type: 'list',
+      ordered: false,
+      items: [
+        {type: 'listItem', children: [{text: 'first rich item'}]},
+        {type: 'listItem', children: [{text: 'second rich item'}]}
+      ]
+    }
+  ]
+};
 const postFixture = {
   id: 7,
   localId: 7,
@@ -148,6 +183,14 @@ const postFixture = {
       mimeType: 'text/html',
       extension: 'html'
     }
+  }, {
+    position: 1,
+    view: 'contents',
+    storageId: 'bafy-post-rich-text',
+    mimeType: 'application/vnd.geesome.rich-text+json',
+    type: 'text',
+    text: 'Rich hello formatted with safe rich link and unsafe rich link',
+    json: postFixtureRichTextContent
   }]
 };
 const blueskyCrossPostAccount = {

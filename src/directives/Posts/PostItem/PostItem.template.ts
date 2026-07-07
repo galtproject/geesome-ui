@@ -17,7 +17,8 @@ module.exports = `
   </md-card-header>
 
   <md-card-content v-for="content in contentsList">
-    <content-manifest-item :manifest="content.storageId" v-if="content.view !== 'link'"></content-manifest-item>
+    <div class="post-rich-text" v-if="content.view !== 'link' && isRichTextContent(content)" v-html="renderRichTextContent(content)"></div>
+    <content-manifest-item :manifest="content.storageId" v-else-if="content.view !== 'link'"></content-manifest-item>
   </md-card-content>
 
   <md-card-actions class="bluesky-cross-post-controls" v-if="showBlueskyControls">
