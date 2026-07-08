@@ -9,6 +9,7 @@
 
 import ContentManifestInfoItem from "../../../directives/ContentManifestInfoItem/ContentManifestInfoItem";
 import {EventBus, UPDATE_GROUP} from "../../../services/events";
+import {plainTextToRichTextDocument} from "../../../libs/richText";
 
 export default {
   template: require('./NewPostControl.template'),
@@ -36,15 +37,35 @@ export default {
     deleteContent(index) {
       this.postContentsDbIds.splice(index, 1);
     },
-    publishPost() {
-      const postContentsDbIds = this.postContentsDbIds;
-      this.postContentsDbIds = [];
+    async publishPost() {
+      if (!this.canPublishPost) {
+        return;
+      }
+      const postData = this.getPostData();
       this.saving = true;
-      this.$geesome.createPost({contents: postContentsDbIds.map(id => ({id})), groupId: this.group.staticId, status: 'published'}).then(() => {
-        this.saving = false;
+      try {
+        await this.$geesome.createPost(postData);
+        this.postText = '';
+        this.postContentsDbIds = [];
         this.$emit('new-post');
         EventBus.$emit(UPDATE_GROUP, this.group.id);
-      })
+      } finally {
+        this.saving = false;
+      }
+    },
+    getPostData() {
+      const postData: any = {
+        contents: this.postContentsDbIds.map(id => ({id})),
+        groupId: this.group.staticId,
+        status: 'published'
+      };
+      if (this.hasPostText) {
+        postData.contentRichText = plainTextToRichTextDocument(this.postText, {
+          source: {ui: 'group:newPostControl'}
+        });
+        postData.contentRichTextFileName = 'post-rich-text.json';
+      }
+      return postData;
     },
   },
 
@@ -54,12 +75,20 @@ export default {
     }
   },
 
-  computed: {},
+  computed: {
+    hasPostText() {
+      return !!this.postText.trim();
+    },
+    canPublishPost() {
+      return !this.saving && (this.hasPostText || this.postContentsDbIds.length > 0);
+    }
+  },
   data() {
     return {
       localeKey: 'group_page',
       canCreatePosts: false,
       saving: false,
+      postText: '',
       postContentsDbIds: []
     }
   },

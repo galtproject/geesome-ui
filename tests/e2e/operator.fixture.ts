@@ -6,6 +6,7 @@ import PostItem from '../../src/directives/Posts/PostItem/PostItem';
 import PinServices from '../../src/pages/UsersSection/UserProfile/PinServices/PinServices';
 import StorageSpacePage from '../../src/pages/StorageSpacePage/StorageSpacePage';
 import ContentManifestItem from '../../src/directives/ContentManifestItem/ContentManifestItem';
+import NewPostControl from '../../src/pages/GroupPage/NewPostControl/NewPostControl';
 import ActivityPubRemoteObjectsPage from '../../src/pages/GroupPage/ActivityPubRemoteObjectsPage/ActivityPubRemoteObjectsPage';
 import ActivityPubSourcesPage from '../../src/pages/ActivityPubSourcesPage/ActivityPubSourcesPage';
 import BlueskySourcesPage from '../../src/pages/BlueskySourcesPage/BlueskySourcesPage';
@@ -682,6 +683,20 @@ Vue.prototype.$geesome = {
     calls.push({type: 'getGroup', groupId});
     return postFixtureGroup;
   },
+  async getCanCreatePost(groupId) {
+    calls.push({type: 'getCanCreatePost', groupId});
+    return true;
+  },
+  async createPost(postData) {
+    calls.push({type: 'createPost', postData});
+    return {
+      id: 701,
+      localId: 701,
+      groupId: postData.groupId,
+      status: postData.status,
+      contents: postData.contents || []
+    };
+  },
   async getContentLink(storageId) {
     calls.push({type: 'getContentLink', storageId});
     return `/ipfs/${storageId}`;
@@ -1133,6 +1148,7 @@ Vue.prototype.$geesome = {
 (window as any).__PIN_SERVICES_E2E__ = {calls};
 (window as any).__STORAGE_SPACE_E2E__ = {calls};
 (window as any).__POST_HTML_SAFETY_E2E__ = {calls};
+(window as any).__NEW_POST_RICH_TEXT_E2E__ = {calls};
 (window as any).__ACTIVITYPUB_REVIEW_E2E__ = {calls, activityPubRemoteObjects};
 (window as any).__ACTIVITYPUB_SOURCES_E2E__ = {calls, activityPubSources, activityPubSourceFeedItems};
 (window as any).__BLUESKY_SOURCES_E2E__ = {calls, blueskySources, blueskyFeedItems, blueskyReviewItems};
@@ -1142,7 +1158,7 @@ Vue.prototype.$geesome = {
 
 new Vue({
   el: '#app',
-  components: {PinServices, PostItem, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, SocialMigrationPage, AddSocNetClientModal},
+  components: {PinServices, PostItem, NewPostControl, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, SocialMigrationPage, AddSocNetClientModal},
   data() {
     return {
       currentPage: getCurrentPage(),
@@ -1176,6 +1192,10 @@ new Vue({
         <h1>Bluesky account verify</h1>
         <add-soc-net-client-modal key="bluesky-account-verify" :account="blueskyCrossPostAccount" />
       </section>
+      <section v-else-if="currentPage === 'new-post-rich-text'" aria-label="New post rich text fixture">
+        <h1>New post rich text</h1>
+        <new-post-control :group="postFixtureGroup" />
+      </section>
       <storage-space-page v-else-if="currentPage === 'storage-space'" />
       <activity-pub-sources-page v-else-if="currentPage === 'activitypub-sources'" />
       <bluesky-sources-page v-else-if="currentPage === 'bluesky-sources'" />
@@ -1201,6 +1221,9 @@ function getCurrentPage() {
   }
   if (window.location.hash === '#bluesky-account-verify') {
     return 'bluesky-account-verify';
+  }
+  if (window.location.hash === '#new-post-rich-text') {
+    return 'new-post-rich-text';
   }
   if (window.location.hash === '#activitypub') {
     return 'activitypub';

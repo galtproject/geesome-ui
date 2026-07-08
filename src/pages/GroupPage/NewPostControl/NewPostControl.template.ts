@@ -5,12 +5,19 @@ module.exports = `
       <div class="md-subhead" v-locale="localeKey + '.new_post'"></div>
     </md-card-header>
 
+    <md-card-content>
+      <md-field>
+        <label>Post text</label>
+        <md-textarea v-model="postText" :disabled="saving" md-autogrow></md-textarea>
+      </md-field>
+    </md-card-content>
+
     <md-card-content v-for="(id, index) in postContentsDbIds" class="contents-list">
       <content-manifest-info-item :db-id="id" @close="deleteContent(index)" :mini="true"></content-manifest-info-item>
     </md-card-content>
 
-    <md-card-content class="publish-post-container" v-if="postContentsDbIds.length">
-      <md-button class="md-raised md-accent" @click="publishPost()" :disabled="saving">
+    <md-card-content class="publish-post-container">
+      <md-button class="md-raised md-accent" @click="publishPost()" :disabled="!canPublishPost">
         <md-icon class="fas fa-save"></md-icon>
         Publish post
       </md-button>
@@ -25,7 +32,7 @@ module.exports = `
     </md-card-content>
 
     <md-card-content>
-      <upload-content @uploaded="handleUpload" :group-id="group.id"></upload-content>
+      <upload-content @uploaded="handleUpload" :group-id="group.id" :hide-methods="['enter_text']"></upload-content>
     </md-card-content>
   </md-card>
 </div>

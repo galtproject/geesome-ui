@@ -24,6 +24,16 @@ export function richTextToSafeHtml(document) {
   return sanitizeHtml(document.blocks.map(block => richTextBlockToHtml(block)).join(''));
 }
 
+export function plainTextToRichTextDocument(text, options: any = {}) {
+  return {
+    type: RICH_TEXT_DOCUMENT_TYPE,
+    version: RICH_TEXT_VERSION,
+    blocks: plainTextToRichTextBlocks(text),
+    ...(options.lang ? {lang: options.lang} : {}),
+    ...(options.source ? {source: options.source} : {})
+  };
+}
+
 function richTextBlockToHtml(block) {
   if (!block || typeof block !== 'object') {
     return '';
@@ -55,6 +65,19 @@ function richTextBlockToHtml(block) {
     return label ? `<p>${escapeHtml(label)}</p>` : '';
   }
   return '';
+}
+
+function plainTextToRichTextBlocks(text) {
+  return String(text || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .split(/\n+/)
+    .map(part => part.trim())
+    .filter(Boolean)
+    .map(part => ({
+      type: 'paragraph',
+      children: [{text: part.replace(/\n+/g, ' ')}]
+    }));
 }
 
 function inlineNodesToHtml(nodes) {
@@ -148,5 +171,6 @@ function escapeHtmlAttribute(value) {
 
 export default {
   isRichTextDocument,
+  plainTextToRichTextDocument,
   richTextToSafeHtml
 };
