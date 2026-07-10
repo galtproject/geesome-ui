@@ -84,6 +84,10 @@ test('social migration previews and imports Bluesky and ActivityPub accounts (du
       .first()
   ).toHaveValue('@artist.bsky.social');
   await expect(page.getByRole('button', {name: 'Preview migration'})).toBeEnabled();
+  await expect(page.getByLabel('Migration import policy')).not.toBeVisible();
+  await expect(page.getByText('Advanced import policy', {exact: true})).toBeVisible();
+  await saveShot(page, 'social-migration-default-mobile.png');
+  await page.getByText('Advanced import policy', {exact: true}).click();
   await expect(page.getByLabel('Migration import policy')).toBeVisible();
   await setMigrationPolicy(page);
   await expect(page.getByText('Policy: images ignore · links reject · embeds ignore · replies omit · quotes reject · reposts omit')).toBeVisible();
@@ -106,6 +110,8 @@ test('social migration previews and imports Bluesky and ActivityPub accounts (du
   await page.getByRole('button', {name: 'Start import'}).click();
   await expect(page.getByText('Queued bluesky-migration-import #77')).toBeVisible();
   await expect(page.getByRole('heading', {name: 'Relation reconciliation'})).toBeVisible();
+  await expect(fieldInput(page, 'Source channel')).not.toBeVisible();
+  await page.getByText('Repair replies and quotes', {exact: true}).click();
   await fieldInput(page, 'Source channel').fill('did:plc:bsky');
   await page.getByRole('button', {name: 'Reconcile relations'}).click();
   await expect(page.getByText('Relation dry run checked 4 posts')).toBeVisible();
@@ -166,6 +172,13 @@ test('social migration previews and imports Bluesky and ActivityPub accounts (du
   await page.setViewportSize(DESKTOP_VIEWPORT);
   await selectMaterialOption(page, 'Source type', 'ActivityPub');
   await fieldInput(page, 'Handle, URL, or resource').fill('alice@example.com');
+  await page.getByText('Advanced import policy', {exact: true}).click();
+  await expect(page.getByLabel('Migration import policy')).not.toBeVisible();
+  await expect(fieldInput(page, 'Ownership proof token')).not.toBeVisible();
+  await saveShot(page, 'social-migration-activitypub-default-desktop.png');
+  await page.getByRole('button', {name: 'Preview migration'}).click();
+  await expect(page.locator('.social-migration-blocker').getByText('Ownership proof is required before import')).toBeVisible();
+  await page.getByRole('button', {name: 'Resolve ownership'}).click();
   await fieldInput(page, 'Ownership proof token').fill('geesome-proof:e2e-profile-token');
   await page.getByRole('button', {name: 'Preview migration'}).click();
   await expect(page.getByText('ActivityPub migration root')).toBeVisible();
@@ -175,6 +188,7 @@ test('social migration previews and imports Bluesky and ActivityPub accounts (du
 
   await page.getByRole('button', {name: 'Start import'}).click();
   await expect(page.getByText('Queued activitypub-migration-import #78')).toBeVisible();
+  await page.getByText('Repair replies and quotes', {exact: true}).click();
   await materialCheckbox(page, 'Dry run').locator('.md-checkbox-container').click();
   await expect(materialCheckbox(page, 'Dry run')).not.toHaveClass(/md-checked/);
   await materialCheckbox(page, 'Allow cross-group targets').locator('.md-checkbox-container').click();
@@ -188,7 +202,7 @@ test('social migration previews and imports Bluesky and ActivityPub accounts (du
   await saveShot(page, 'social-migration-activitypub-reconcile-desktop.png');
 
   const activityPubPreviewCalls = await calls(page, 'userActivityPubMigrationPreview');
-  expect(activityPubPreviewCalls[0].input).toMatchObject({
+  expect(activityPubPreviewCalls[1].input).toMatchObject({
     handle: 'alice@example.com',
     claimed: true,
     ownershipProofToken: 'geesome-proof:e2e-profile-token',

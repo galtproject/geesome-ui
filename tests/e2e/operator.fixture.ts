@@ -632,6 +632,18 @@ Vue.prototype.$geesome = {
   },
   async userActivityPubMigrationPreview(input) {
     calls.push({type: 'userActivityPubMigrationPreview', input});
+    if (!input || !input.ownershipProofToken) {
+      return {
+        ...socialMigrationActivityPubPreview,
+        ownership: {
+          claimed: true,
+          verified: false,
+          method: null,
+          actor: socialMigrationActivityPubPreview.actor,
+          reason: 'Ownership proof is required before import'
+        }
+      };
+    }
     return socialMigrationActivityPubPreview;
   },
   async userActivityPubMigrationImport(input) {
