@@ -531,6 +531,37 @@ a.icon-link {
     align-items: end;
   }
 
+  .social-migration-disclosure {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    margin-top: 16px;
+    padding-top: 4px;
+
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+      padding: 12px 4px;
+    }
+  }
+
+  .social-migration-settings-builder {
+    align-items: end;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    padding: 0 4px 8px;
+  }
+
+  .social-migration-blocker {
+    align-items: center;
+    background: rgba(251, 189, 8, 0.12);
+    border-left: 3px solid #fbbd08;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 12px;
+  }
+
   .social-migration-policy-builder,
   .social-migration-rule-builder {
     display: grid;

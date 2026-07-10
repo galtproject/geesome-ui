@@ -32,15 +32,6 @@ module.exports = `
             </md-select>
           </md-field>
 
-          <md-field>
-            <label>Feed filter</label>
-            <md-select v-model="blueskyFilter" :disabled="loading">
-              <md-option value="posts_with_replies">Posts with replies</md-option>
-              <md-option value="posts_no_replies">Posts only</md-option>
-              <md-option value="posts_with_media">Posts with media</md-option>
-              <md-option value="posts_and_author_threads">Author threads</md-option>
-            </md-select>
-          </md-field>
         </template>
 
         <template v-if="isActivityPub">
@@ -59,10 +50,6 @@ module.exports = `
             <md-input v-model="activityPubSource" :disabled="loading"></md-input>
           </md-field>
 
-          <md-field>
-            <label>Ownership proof token</label>
-            <md-input v-model="ownershipProofToken" :disabled="loading"></md-input>
-          </md-field>
         </template>
 
         <md-field>
@@ -70,26 +57,56 @@ module.exports = `
           <md-input v-model="targetGroupName" :disabled="loading"></md-input>
         </md-field>
 
-        <md-field>
-          <label>Moderation</label>
-          <md-select v-model="moderationMode" :disabled="loading">
-            <md-option value="autoImport">Auto import</md-option>
-            <md-option value="reviewFirst">Review first</md-option>
-          </md-select>
-        </md-field>
-
-        <md-field>
-          <label>Limit</label>
-          <md-input v-model="limit" type="number" min="1" max="100" :disabled="loading"></md-input>
-        </md-field>
-
-        <md-field>
-          <label>Max pages</label>
-          <md-input v-model="maxPages" type="number" min="1" max="25" :disabled="loading"></md-input>
-        </md-field>
       </div>
 
-      <div class="social-migration-policy-builder" aria-label="Migration import policy">
+      <details key="source-settings" class="social-migration-disclosure">
+        <summary>Source and import settings</summary>
+        <div class="social-migration-settings-builder">
+          <md-field v-if="!isActivityPub">
+            <label>Feed filter</label>
+            <md-select v-model="blueskyFilter" :disabled="loading">
+              <md-option value="posts_with_replies">Posts with replies</md-option>
+              <md-option value="posts_no_replies">Posts only</md-option>
+              <md-option value="posts_with_media">Posts with media</md-option>
+              <md-option value="posts_and_author_threads">Author threads</md-option>
+            </md-select>
+          </md-field>
+
+          <md-field>
+            <label>Moderation</label>
+            <md-select v-model="moderationMode" :disabled="loading">
+              <md-option value="autoImport">Auto import</md-option>
+              <md-option value="reviewFirst">Review first</md-option>
+            </md-select>
+          </md-field>
+
+          <md-field>
+            <label>Limit</label>
+            <md-input v-model="limit" type="number" min="1" max="100" :disabled="loading"></md-input>
+          </md-field>
+
+          <md-field>
+            <label>Max pages</label>
+            <md-input v-model="maxPages" type="number" min="1" max="25" :disabled="loading"></md-input>
+          </md-field>
+
+          <md-checkbox v-model="importAsync" :disabled="loading">Run as async job</md-checkbox>
+        </div>
+      </details>
+
+      <details v-if="isActivityPub" key="ownership" ref="ownershipDetails" class="social-migration-disclosure">
+        <summary>Resolve migration ownership</summary>
+        <div class="social-migration-settings-builder">
+          <md-field>
+            <label>Ownership proof token</label>
+            <md-input v-model="ownershipProofToken" :disabled="loading"></md-input>
+          </md-field>
+        </div>
+      </details>
+
+      <details key="import-policy" class="social-migration-disclosure">
+        <summary>Advanced import policy</summary>
+        <div class="social-migration-policy-builder" aria-label="Migration import policy">
         <md-field>
           <label>Images</label>
           <md-select v-model="migrationMediaPolicy.images" :disabled="loading">
@@ -143,11 +160,11 @@ module.exports = `
             <md-option value="reject">Reject</md-option>
           </md-select>
         </md-field>
-      </div>
+        </div>
 
-      <div class="activitypub-sources-muted social-migration-policy-meta">{{getMigrationPolicyMeta()}}</div>
+        <div class="activitypub-sources-muted social-migration-policy-meta">{{getMigrationPolicyMeta()}}</div>
 
-      <div class="social-migration-rule-builder">
+        <div class="social-migration-rule-builder">
         <md-field>
           <label>Filter value</label>
           <md-input v-model="newRule.value" :disabled="loading"></md-input>
@@ -183,20 +200,19 @@ module.exports = `
           <md-icon class="fas fa-filter"></md-icon>
           <span>Add filter</span>
         </md-button>
-      </div>
-
-      <div class="social-migration-rules-list" v-if="moderationRules.length">
-        <div class="social-migration-rule-chip" v-for="(rule, index) in moderationRules" :key="index">
-          <span>{{getRuleLabel(rule)}}</span>
-          <md-button class="md-icon-button md-dense" @click="removeModerationRule(index)" :disabled="loading" :aria-label="'Remove ' + getRuleLabel(rule)">
-            <md-icon class="fas fa-times"></md-icon>
-          </md-button>
         </div>
-      </div>
+
+        <div class="social-migration-rules-list" v-if="moderationRules.length">
+          <div class="social-migration-rule-chip" v-for="(rule, index) in moderationRules" :key="index">
+            <span>{{getRuleLabel(rule)}}</span>
+            <md-button class="md-icon-button md-dense" @click="removeModerationRule(index)" :disabled="loading" :aria-label="'Remove ' + getRuleLabel(rule)">
+              <md-icon class="fas fa-times"></md-icon>
+            </md-button>
+          </div>
+        </div>
+      </details>
 
       <div class="social-migration-actions">
-        <md-checkbox v-model="importAsync" :disabled="loading">Run as async job</md-checkbox>
-
         <md-button class="md-raised md-primary" @click="previewMigration" :disabled="previewDisabled">
           <md-icon class="fas fa-search"></md-icon>
           <span>Preview migration</span>
@@ -211,6 +227,10 @@ module.exports = `
       <md-progress-bar md-mode="indeterminate" v-if="loading"></md-progress-bar>
       <div class="activitypub-sources-error" v-if="errorMessage">{{errorMessage}}</div>
       <div class="activitypub-sources-success" v-if="successMessage">{{successMessage}}</div>
+      <div class="social-migration-blocker" v-if="ownershipBlocked">
+        <span>{{getOwnershipText()}}</span>
+        <md-button class="md-primary" @click="openOwnershipDetails">Resolve ownership</md-button>
+      </div>
     </md-card-content>
   </md-card>
 
@@ -257,7 +277,9 @@ module.exports = `
   <md-card v-if="importResult">
     <md-card-content>
       <h2>Relation reconciliation</h2>
-      <div class="social-migration-reconcile-form">
+      <details key="relation-repair" class="social-migration-disclosure">
+        <summary>Repair replies and quotes</summary>
+        <div class="social-migration-reconcile-form">
         <md-checkbox v-model="reconcileDryRun" :disabled="loading">Dry run</md-checkbox>
         <md-checkbox v-model="reconcileAllowCrossGroup" :disabled="loading">Allow cross-group targets</md-checkbox>
         <md-checkbox v-model="reconcileForce" :disabled="loading">Recompute existing</md-checkbox>
@@ -286,7 +308,7 @@ module.exports = `
           <md-icon class="fas fa-link"></md-icon>
           <span>Reconcile relations</span>
         </md-button>
-      </div>
+        </div>
 
       <div class="social-migration-summary" v-if="getReconcileSummaryRows().length">
         <div class="social-migration-summary-item" v-for="row in getReconcileSummaryRows()" :key="'reconcile-' + row.key">
@@ -329,6 +351,7 @@ module.exports = `
           <span class="activitypub-feed-state review-rejected">failed</span>
         </article>
       </div>
+      </details>
     </md-card-content>
   </md-card>
 </div>

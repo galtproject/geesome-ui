@@ -93,6 +93,13 @@ export default {
       this.reconcileCursorPublishedAt = '';
       this.reconcileCursorId = '';
     },
+    openOwnershipDetails() {
+      const details: any = this.$refs.ownershipDetails;
+      if (details) {
+        details.open = true;
+        details.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+      }
+    },
     getPreviewRequest() {
       if (this.sourceType === sourceTypes.ActivityPub) {
         return this.$geesome.userActivityPubMigrationPreview(this.getActivityPubInput(false));
@@ -372,6 +379,12 @@ export default {
         return !ownership.verified && !this.ownershipProofToken.trim();
       }
       return !this.selectedBlueskyAccountId;
+    },
+    ownershipBlocked() {
+      if (!this.isActivityPub || !this.preview) {
+        return false;
+      }
+      return !(this.preview.ownership && this.preview.ownership.verified) && !this.ownershipProofToken.trim();
     },
     reconcileDisabled() {
       return this.loading || !this.targetGroupName.trim();
