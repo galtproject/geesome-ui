@@ -28,15 +28,20 @@ module.exports = `
           <md-input v-model="sourceValue" :disabled="actionLoading"></md-input>
         </md-field>
 
-        <md-field>
-          <label>Display name</label>
-          <md-input v-model="sourceDisplayName" :disabled="actionLoading"></md-input>
-        </md-field>
-
         <md-button class="md-raised md-accent activitypub-sources-subscribe-button" @click="subscribeSource" :disabled="subscribeDisabled">
           Subscribe source
         </md-button>
       </div>
+
+      <details class="activitypub-source-disclosure">
+        <summary>Source settings</summary>
+        <div class="activitypub-source-settings">
+          <md-field>
+            <label>Display name</label>
+            <md-input v-model="sourceDisplayName" :disabled="actionLoading"></md-input>
+          </md-field>
+        </div>
+      </details>
 
       <md-progress-bar md-mode="indeterminate" v-if="loadingSources || loadingFeed || actionLoading"></md-progress-bar>
       <div class="activitypub-sources-error" v-if="errorMessage">{{errorMessage}}</div>
@@ -88,19 +93,25 @@ module.exports = `
               <md-icon class="fas fa-check-double"></md-icon>
               <span>Mark read</span>
             </md-button>
-            <md-button class="md-primary" @click="setSelectedSourceStatus('active')" :disabled="actionLoading || selectedSourceActive">
-              <md-icon class="fas fa-play"></md-icon>
-              <span>Resume</span>
-            </md-button>
-            <md-button class="md-primary" @click="setSelectedSourceStatus('paused')" :disabled="actionLoading || selectedSourcePaused">
-              <md-icon class="fas fa-pause"></md-icon>
-              <span>Pause</span>
-            </md-button>
-            <md-button class="md-warn" @click="removeSelectedSource" :disabled="actionLoading">
-              <md-icon class="fas fa-trash"></md-icon>
-              <span>Remove</span>
-            </md-button>
           </div>
+
+          <details class="activitypub-source-disclosure activitypub-source-management">
+            <summary>Manage source</summary>
+            <div class="activitypub-source-feed-actions">
+              <md-button class="md-primary" @click="setSelectedSourceStatus('active')" :disabled="actionLoading || selectedSourceActive">
+                <md-icon class="fas fa-play"></md-icon>
+                <span>Resume</span>
+              </md-button>
+              <md-button class="md-primary" @click="setSelectedSourceStatus('paused')" :disabled="actionLoading || selectedSourcePaused">
+                <md-icon class="fas fa-pause"></md-icon>
+                <span>Pause</span>
+              </md-button>
+              <md-button class="md-warn" @click="removeSelectedSource" :disabled="actionLoading">
+                <md-icon class="fas fa-trash"></md-icon>
+                <span>Remove</span>
+              </md-button>
+            </div>
+          </details>
 
           <div class="activitypub-sources-empty" v-if="!loadingFeed && !hasFeedItems">No remote posts received yet</div>
 

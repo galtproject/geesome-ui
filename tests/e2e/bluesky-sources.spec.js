@@ -35,12 +35,18 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
   await expect(page.getByRole('heading', {name: 'Review queue'})).toBeVisible();
   await expect(page.getByText('Review-first Bluesky post waiting for import.')).toBeVisible();
   await expect(page.getByText('Quarantined Bluesky post waiting for admin decision.')).toBeVisible();
-  await expect(page.getByLabel('Bluesky import policy')).toBeVisible();
+  await expect(page.getByLabel('Bluesky import policy')).not.toBeVisible();
   await expect(page.getByText('Policy: links ignore · embeds reject · quotes omit · reposts reject').first()).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Subscribe source'})).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Save settings'})).not.toBeVisible();
+  await expect(page.getByRole('button', {name: 'Sync imported posts'})).not.toBeVisible();
+  await saveShot(page, 'bluesky-sources-default-mobile.png');
+
+  await page.getByText('Source refresh settings', {exact: true}).click();
+  await page.getByText('Advanced import policy', {exact: true}).click();
+  await expect(page.getByLabel('Bluesky import policy')).toBeVisible();
   await expect(page.getByText('Link previews')).toBeVisible();
   await expect(page.getByText('Unsupported embeds')).toBeVisible();
-  await expect(page.getByRole('button', {name: 'Subscribe source'})).toBeVisible();
-
   await page.getByLabel('Rule value').fill('giveaway spam');
   await page.getByRole('button', {name: 'Add filter'}).click();
   await expect(page.getByText('block · keyword · text · giveaway spam')).toBeVisible();
@@ -113,6 +119,8 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
   });
 
   await page.setViewportSize(DESKTOP_VIEWPORT);
+  await page.getByText('Source refresh settings', {exact: true}).click();
+  await page.getByText('Advanced import policy', {exact: true}).click();
   await expect(page.getByText('https://bsky.app/profile/bsky.app/post/abc')).toBeVisible();
   await saveShot(page, 'bluesky-sources-desktop.png');
 
@@ -123,6 +131,7 @@ test('Bluesky sources UI subscribes, refreshes, and reads native ATProto posts (
   await page.getByRole('button', {name: 'Reject Quarantined Bluesky post'}).click();
   await expect(page.getByText('Marked Quarantined Bluesky post rejected')).toBeVisible();
 
+  await page.getByText('Manage source', {exact: true}).click();
   await page.getByRole('button', {name: 'Sync imported posts'}).click();
   await expect(page.getByText('Checked 1, updated 1, deleted 0')).toBeVisible();
 

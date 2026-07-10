@@ -18,49 +18,56 @@ module.exports = `
           <md-input v-model="sourceActor" :disabled="actionLoading"></md-input>
         </md-field>
 
-        <md-field>
-          <label>Feed filter</label>
-          <md-select v-model="sourceFilter" :disabled="actionLoading">
-            <md-option value="posts_no_replies">Posts only</md-option>
-            <md-option value="posts_with_replies">Posts with replies</md-option>
-            <md-option value="posts_with_media">Posts with media</md-option>
-            <md-option value="posts_and_author_threads">Author threads</md-option>
-          </md-select>
-        </md-field>
-
-        <md-field>
-          <label>Display name</label>
-          <md-input v-model="sourceDisplayName" :disabled="actionLoading"></md-input>
-        </md-field>
-
-        <md-field>
-          <label>Group name</label>
-          <md-input v-model="sourceGroupName" :disabled="actionLoading"></md-input>
-        </md-field>
-
-        <md-field>
-          <label>Import limit</label>
-          <md-input v-model="sourceImportLimit" type="number" min="1" max="100" :disabled="actionLoading"></md-input>
-        </md-field>
-
-        <md-field>
-          <label>Moderation</label>
-          <md-select v-model="moderationMode" :disabled="actionLoading">
-            <md-option value="autoImport">Auto import</md-option>
-            <md-option value="reviewFirst">Review first</md-option>
-          </md-select>
-        </md-field>
-
         <md-button class="md-raised md-accent activitypub-sources-subscribe-button" @click="subscribeSource" :disabled="subscribeDisabled">
           Subscribe source
         </md-button>
-
-        <md-button class="md-raised md-primary activitypub-sources-subscribe-button" @click="saveSelectedSourceSettings" :disabled="saveSettingsDisabled">
-          Save settings
-        </md-button>
       </div>
 
-      <div class="bluesky-policy-builder" aria-label="Bluesky import policy">
+      <details class="activitypub-source-disclosure">
+        <summary>Source refresh settings</summary>
+        <div class="bluesky-sources-subscribe activitypub-source-settings">
+          <md-field>
+            <label>Feed filter</label>
+            <md-select v-model="sourceFilter" :disabled="actionLoading">
+              <md-option value="posts_no_replies">Posts only</md-option>
+              <md-option value="posts_with_replies">Posts with replies</md-option>
+              <md-option value="posts_with_media">Posts with media</md-option>
+              <md-option value="posts_and_author_threads">Author threads</md-option>
+            </md-select>
+          </md-field>
+
+          <md-field>
+            <label>Display name</label>
+            <md-input v-model="sourceDisplayName" :disabled="actionLoading"></md-input>
+          </md-field>
+
+          <md-field>
+            <label>Group name</label>
+            <md-input v-model="sourceGroupName" :disabled="actionLoading"></md-input>
+          </md-field>
+
+          <md-field>
+            <label>Import limit</label>
+            <md-input v-model="sourceImportLimit" type="number" min="1" max="100" :disabled="actionLoading"></md-input>
+          </md-field>
+
+          <md-field>
+            <label>Moderation</label>
+            <md-select v-model="moderationMode" :disabled="actionLoading">
+              <md-option value="autoImport">Auto import</md-option>
+              <md-option value="reviewFirst">Review first</md-option>
+            </md-select>
+          </md-field>
+
+          <md-button class="md-raised md-primary activitypub-sources-subscribe-button" @click="saveSelectedSourceSettings" :disabled="saveSettingsDisabled">
+            Save settings
+          </md-button>
+        </div>
+      </details>
+
+      <details class="activitypub-source-disclosure">
+        <summary>Advanced import policy</summary>
+        <div class="bluesky-policy-builder" aria-label="Bluesky import policy">
         <md-field>
           <label>Images</label>
           <md-select v-model="sourceMediaPolicy.images" :disabled="actionLoading">
@@ -114,9 +121,9 @@ module.exports = `
             <md-option value="reject">Reject</md-option>
           </md-select>
         </md-field>
-      </div>
+        </div>
 
-      <div class="bluesky-rule-builder">
+        <div class="bluesky-rule-builder">
         <md-field>
           <label>Rule value</label>
           <md-input v-model="newRule.value" :disabled="actionLoading"></md-input>
@@ -152,16 +159,17 @@ module.exports = `
           <md-icon class="fas fa-filter"></md-icon>
           <span>Add filter</span>
         </md-button>
-      </div>
-
-      <div class="bluesky-rules-list" v-if="moderationRules.length">
-        <div class="bluesky-rule-chip" v-for="(rule, index) in moderationRules" :key="index">
-          <span>{{getRuleLabel(rule)}}</span>
-          <md-button class="md-icon-button md-dense" @click="removeModerationRule(index)" :disabled="actionLoading" :aria-label="'Remove ' + getRuleLabel(rule)">
-            <md-icon class="fas fa-times"></md-icon>
-          </md-button>
         </div>
-      </div>
+
+        <div class="bluesky-rules-list" v-if="moderationRules.length">
+          <div class="bluesky-rule-chip" v-for="(rule, index) in moderationRules" :key="index">
+            <span>{{getRuleLabel(rule)}}</span>
+            <md-button class="md-icon-button md-dense" @click="removeModerationRule(index)" :disabled="actionLoading" :aria-label="'Remove ' + getRuleLabel(rule)">
+              <md-icon class="fas fa-times"></md-icon>
+            </md-button>
+          </div>
+        </div>
+      </details>
 
       <md-progress-bar md-mode="indeterminate" v-if="loadingSources || loadingFeed || loadingReviews || actionLoading"></md-progress-bar>
       <div class="activitypub-sources-error" v-if="errorMessage">{{errorMessage}}</div>
@@ -220,23 +228,29 @@ module.exports = `
               <md-icon class="fas fa-clipboard-check"></md-icon>
               <span>Reload reviews</span>
             </md-button>
-            <md-button class="md-primary" @click="syncSelectedSource" :disabled="loadingFeed || actionLoading || !selectedSource.dbChannelId">
-              <md-icon class="fas fa-exchange-alt"></md-icon>
-              <span>Sync imported posts</span>
-            </md-button>
-            <md-button class="md-primary" @click="setSelectedSourceStatus('active')" :disabled="actionLoading || selectedSourceActive">
-              <md-icon class="fas fa-play"></md-icon>
-              <span>Resume</span>
-            </md-button>
-            <md-button class="md-primary" @click="setSelectedSourceStatus('paused')" :disabled="actionLoading || selectedSourcePaused">
-              <md-icon class="fas fa-pause"></md-icon>
-              <span>Pause</span>
-            </md-button>
-            <md-button class="md-warn" @click="removeSelectedSource" :disabled="actionLoading">
-              <md-icon class="fas fa-trash"></md-icon>
-              <span>Remove</span>
-            </md-button>
           </div>
+
+          <details class="activitypub-source-disclosure activitypub-source-management">
+            <summary>Manage source</summary>
+            <div class="activitypub-source-feed-actions">
+              <md-button class="md-primary" @click="syncSelectedSource" :disabled="loadingFeed || actionLoading || !selectedSource.dbChannelId">
+                <md-icon class="fas fa-exchange-alt"></md-icon>
+                <span>Sync imported posts</span>
+              </md-button>
+              <md-button class="md-primary" @click="setSelectedSourceStatus('active')" :disabled="actionLoading || selectedSourceActive">
+                <md-icon class="fas fa-play"></md-icon>
+                <span>Resume</span>
+              </md-button>
+              <md-button class="md-primary" @click="setSelectedSourceStatus('paused')" :disabled="actionLoading || selectedSourcePaused">
+                <md-icon class="fas fa-pause"></md-icon>
+                <span>Pause</span>
+              </md-button>
+              <md-button class="md-warn" @click="removeSelectedSource" :disabled="actionLoading">
+                <md-icon class="fas fa-trash"></md-icon>
+                <span>Remove</span>
+              </md-button>
+            </div>
+          </details>
 
           <section class="bluesky-review-panel" aria-label="Bluesky source review queue">
             <div class="activitypub-source-feed-header bluesky-review-header">
