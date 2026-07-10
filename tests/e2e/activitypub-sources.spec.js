@@ -34,6 +34,7 @@ test('ActivityPub sources UI subscribes and reads a bridged Bluesky feed (dual v
   await expect(page.getByText('A new official Bluesky post bridged into ActivityPub.')).toBeVisible();
   await expect(page.getByText('Launch image')).toBeVisible();
   await expect(page.getByRole('button', {name: 'Subscribe source'})).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Pause'})).not.toBeVisible();
   await saveShot(page, 'activitypub-sources-mobile.png');
 
   await page.getByRole('button', {name: 'Subscribe source'}).click();
@@ -53,6 +54,7 @@ test('ActivityPub sources UI subscribes and reads a bridged Bluesky feed (dual v
   await expect(page.getByText('Read 2026-06-02 12:30 UTC').first()).toBeVisible();
   await expect.poll(async () => (await calls(page, 'adminMarkActivityPubSourceRead')).length).toBe(1);
 
+  await page.getByText('Manage source', {exact: true}).click();
   await page.getByRole('button', {name: 'Pause'}).click();
   await expect(page.getByText('paused').first()).toBeVisible();
 

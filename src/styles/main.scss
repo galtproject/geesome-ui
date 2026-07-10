@@ -280,6 +280,28 @@ a.icon-link {
     white-space: nowrap;
   }
 
+  .activitypub-source-disclosure {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    margin-top: 14px;
+
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+      padding: 12px 4px;
+    }
+  }
+
+  .activitypub-source-settings {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    padding: 0 4px 8px;
+  }
+
+  .activitypub-source-management {
+    margin-top: 2px;
+  }
+
   .activitypub-sources-layout {
     display: grid;
     grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
