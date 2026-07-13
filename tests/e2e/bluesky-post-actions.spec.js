@@ -45,6 +45,10 @@ test('post detail Bluesky controls cross-post, update, and delete with selected 
   await expect(page.locator('.bluesky-cross-post-form > .md-field').first().locator('.md-select-value')).toHaveValue('@artist.bsky.social');
   await expect(page.getByLabel('App password')).toBeVisible();
   await expect(page.getByText('Reply and quote context is preserved')).toBeVisible();
+  await expect(page.getByLabel('Bluesky cross-post policy')).not.toBeVisible();
+  await expect(page.getByText('Advanced cross-post policy', {exact: true})).toBeVisible();
+  await saveShot(page, 'bluesky-post-actions-default-mobile.png');
+  await page.getByText('Advanced cross-post policy', {exact: true}).click();
   await expect(page.getByLabel('Bluesky cross-post policy')).toBeVisible();
   await expect(policySelectValue(page, 'Images')).toHaveValue('Upload blobs');
   await expect(policySelectValue(page, 'Upload failure')).toHaveValue('Use public link');
@@ -57,7 +61,10 @@ test('post detail Bluesky controls cross-post, update, and delete with selected 
   await saveShot(page, 'bluesky-post-actions-mobile.png');
 
   await page.setViewportSize(DESKTOP_VIEWPORT);
+  await page.getByText('Advanced cross-post policy', {exact: true}).click();
+  await expect(page.getByLabel('Bluesky cross-post policy')).not.toBeVisible();
   await saveShot(page, 'bluesky-post-actions-desktop.png');
+  await page.getByText('Advanced cross-post policy', {exact: true}).click();
 
   await selectPolicyOption(page, 'Images', 'Public links');
   await selectPolicyOption(page, 'Upload failure', 'Reject post');

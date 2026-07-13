@@ -38,8 +38,13 @@ test('Bluesky account modal connects and verifies credentials without exposing s
 
   await expect(page.getByRole('heading', {name: 'Bluesky account connect'})).toBeVisible();
   await expect(page.getByText('Use a Bluesky app password')).toBeVisible();
-  await expect(page.getByText('Encrypt app password with API token')).toBeVisible();
+  await expect(page.getByText('Encrypt app password with API token')).not.toBeVisible();
+  await expect(page.getByText('Credential storage', {exact: true})).toBeVisible();
   await expect(page.getByRole('button', {name: 'Connect Bluesky'})).toBeDisabled();
+  await saveShot(page, 'bluesky-account-connect-default-mobile.png');
+
+  await page.getByText('Credential storage', {exact: true}).click();
+  await expect(page.getByText('Encrypt app password with API token')).toBeVisible();
 
   await visibleBlueskyIdentifierInput(page).fill('newartist.bsky.social');
   await visibleBlueskyAppPasswordInput(page).fill('app-password-123');
@@ -62,6 +67,7 @@ test('Bluesky account modal connects and verifies credentials without exposing s
   await expect(page.getByRole('heading', {name: 'Bluesky account verify'})).toBeVisible();
   await expect(visibleBlueskyIdentifierInput(page)).toHaveValue('artist.bsky.social');
   await expect(page.getByRole('button', {name: 'Verify'})).toBeDisabled();
+  await expect(page.getByText('Encrypt app password with API token')).not.toBeVisible();
 
   await visibleBlueskyAppPasswordInput(page).fill('verify-password-456');
   await expect(page.getByRole('button', {name: 'Verify'})).toBeEnabled();
