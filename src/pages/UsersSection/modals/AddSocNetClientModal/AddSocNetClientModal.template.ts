@@ -122,7 +122,12 @@ module.exports = `
 			</md-field>
 		</div>
 
-		<md-checkbox v-model="inputs.isEncrypted" class="md-primary">{{encryptionLabel}}</md-checkbox>
+		<details v-if="socNet === 'bluesky'" class="social-account-disclosure">
+			<summary>Credential storage</summary>
+			<md-checkbox v-model="inputs.isEncrypted" class="md-primary">{{encryptionLabel}}</md-checkbox>
+		</details>
+
+		<md-checkbox v-else v-model="inputs.isEncrypted" class="md-primary">{{encryptionLabel}}</md-checkbox>
 	  </div>
 
 	  <template slot="footer">

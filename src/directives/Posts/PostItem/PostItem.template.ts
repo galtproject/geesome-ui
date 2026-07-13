@@ -52,7 +52,9 @@ module.exports = `
           {{blueskyRelationNotice}}
         </div>
 
-        <div class="bluesky-cross-post-policy" aria-label="Bluesky cross-post policy">
+        <details class="bluesky-cross-post-disclosure">
+          <summary>Advanced cross-post policy</summary>
+          <div class="bluesky-cross-post-policy" aria-label="Bluesky cross-post policy">
           <md-field>
             <label>Images</label>
             <md-select v-model="blueskyMediaPolicy.images" :disabled="blueskyActionLoading">
@@ -105,7 +107,8 @@ module.exports = `
               <md-option value="omit">Omit quote metadata</md-option>
             </md-select>
           </md-field>
-        </div>
+          </div>
+        </details>
 
         <md-button class="md-primary" v-if="!selectedBlueskyRecord" @click="crossPostToBluesky" :disabled="blueskyActionDisabled">
           <md-icon class="fas fa-share"></md-icon>
