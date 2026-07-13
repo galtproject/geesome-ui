@@ -12,7 +12,7 @@ const clone = require('lodash/clone');
 export default {
   template: require('./PinServices.template'),
   components: {},
-  props: [],
+  props: ['groupId'],
   async created() {
     this.getPinAccounts();
   },
@@ -20,8 +20,10 @@ export default {
     async getPinAccounts() {
       this.loading = true;
       try {
-        const response = await this.$geesome.getUserPinAccounts();
-        this.pinAccounts = (response.list || []).map(normalizeAccount);
+        const response = this.isGroupMode
+          ? await this.$geesome.getGroupPinAccounts(this.groupId)
+          : await this.$geesome.getUserPinAccounts();
+        this.pinAccounts = (response.list || []).map(account => normalizeAccount(account, this.isGroupMode));
         if (!this.pinAccountName && this.pinAccounts.length) {
           this.pinAccountName = getAccountName(this.pinAccounts[0]);
         }
@@ -30,12 +32,12 @@ export default {
       }
     },
     addPinAccount() {
-      this.form = emptyAccount();
+      this.form = emptyAccount(this.isGroupMode);
       this.isFormVisible = true;
     },
     editPinAccount(account) {
       this.form = {
-        ...normalizeAccount(clone(account)),
+        ...normalizeAccount(clone(account), this.isGroupMode),
         secretApiKey: ''
       };
       this.isFormVisible = true;
@@ -47,13 +49,13 @@ export default {
       this.form.autoPinMetadataRows.splice(index, 1);
     },
     cancelPinAccount() {
-      this.form = emptyAccount();
+      this.form = emptyAccount(this.isGroupMode);
       this.isFormVisible = false;
     },
     async savePinAccount() {
       this.saving = true;
       try {
-        const accountData = toAccountPayload(this.form);
+        const accountData = toAccountPayload(this.form, this.isGroupMode ? this.groupId : null);
         if (this.form.id) {
           await this.$geesome.updatePinAccount(this.form.id, accountData);
         } else {
@@ -137,7 +139,14 @@ export default {
         || !this.form.service
         || !this.form.apiKey
         || (!this.form.id && !this.form.secretApiKey)
+        || this.hasInvalidAutoPinTargets
         || this.hasInvalidAutoPinMetadata;
+    },
+    hasInvalidAutoPinTargets() {
+      return this.isGroupMode
+        && this.form.autoPinEnabled
+        && !this.form.autoPinPostManifest
+        && !this.form.autoPinContents;
     },
     hasInvalidAutoPinMetadata() {
       if (!this.form.autoPinEnabled) {
@@ -148,6 +157,15 @@ export default {
     },
     isPinDisabled() {
       return this.pinning || !this.pinAccountName || !this.pinStorageId;
+    },
+    isGroupMode() {
+      return this.groupId !== undefined && this.groupId !== null && this.groupId !== '';
+    },
+    sectionTitle() {
+      return this.isGroupMode ? 'Group pin services' : 'Pin services';
+    },
+    automaticPinLabel() {
+      return this.isGroupMode ? 'Automatically pin published group posts' : 'Automatically pin new uploads';
     }
   },
   data() {
@@ -158,7 +176,7 @@ export default {
       deletingId: null,
       isFormVisible: false,
       pinAccounts: [],
-      form: emptyAccount(),
+      form: emptyAccount(false),
       pinAccountName: '',
       pinStorageId: '',
       uploadedContent: null,
@@ -167,7 +185,7 @@ export default {
   }
 }
 
-function emptyAccount() {
+function emptyAccount(isGroupMode) {
   return {
     name: 'pinata',
     service: 'pinata',
@@ -177,11 +195,13 @@ function emptyAccount() {
     isEncrypted: true,
     autoPinEnabled: false,
     autoPinAttempts: 3,
-    autoPinMetadataRows: []
+    autoPinMetadataRows: [],
+    autoPinPostManifest: !!isGroupMode,
+    autoPinContents: !!isGroupMode
   };
 }
 
-function toAccountPayload(form) {
+function toAccountPayload(form, groupId) {
   const accountOptions = getAccountOptions(form);
   const autoPinOptions = accountOptions.autoPin || {};
   const payload: any = {
@@ -190,20 +210,28 @@ function toAccountPayload(form) {
     apiKey: form.apiKey,
     isEncrypted: !!form.isEncrypted
   };
+  if (groupId !== null) {
+    payload.groupId = groupId;
+  }
   if (form.endpoint) {
     payload.endpoint = form.endpoint;
   }
   if (form.secretApiKey) {
     payload.secretApiKey = form.secretApiKey;
   }
+  const autoPin = {
+    ...autoPinOptions,
+    enabled: !!form.autoPinEnabled,
+    attempts: normalizeAutoPinAttempts(form.autoPinAttempts),
+    metadata: getAutoPinMetadata(form.autoPinMetadataRows)
+  };
+  if (groupId !== null) {
+    autoPin.scope = 'group-post';
+    autoPin.targets = getGroupAutoPinTargets(form);
+  }
   payload.options = {
     ...accountOptions,
-    autoPin: {
-      ...autoPinOptions,
-      enabled: !!form.autoPinEnabled,
-      attempts: normalizeAutoPinAttempts(form.autoPinAttempts),
-      metadata: getAutoPinMetadata(form.autoPinMetadataRows)
-    }
+    autoPin
   };
   return payload;
 }
@@ -212,19 +240,45 @@ function getAccountName(account) {
   return account ? account.name : '';
 }
 
-function normalizeAccount(account) {
+function normalizeAccount(account, isGroupMode) {
   const options = getAccountOptions(account);
   const autoPin = options.autoPin || {};
+  const targets = Array.isArray(autoPin.targets) ? autoPin.targets : [];
   return {
     ...account,
     options,
     autoPinEnabled: autoPin.enabled === true,
     autoPinAttempts: normalizeAutoPinAttempts(autoPin.attempts),
+    autoPinPostManifest: isGroupMode && targets.includes('post-manifest'),
+    autoPinContents: isGroupMode && targets.includes('contents'),
+    autoPinTargetsLabel: getGroupAutoPinTargetsLabel(targets),
     autoPinMetadataRows: Object.keys(autoPin.metadata || {}).map(key => ({
       key,
       value: String(autoPin.metadata[key])
     }))
   };
+}
+
+function getGroupAutoPinTargets(form) {
+  const targets = [];
+  if (form.autoPinPostManifest) {
+    targets.push('post-manifest');
+  }
+  if (form.autoPinContents) {
+    targets.push('contents');
+  }
+  return targets;
+}
+
+function getGroupAutoPinTargetsLabel(targets) {
+  const labels = [];
+  if (targets.includes('post-manifest')) {
+    labels.push('manifests');
+  }
+  if (targets.includes('contents')) {
+    labels.push('content');
+  }
+  return labels.join(' + ');
 }
 
 function getAccountOptions(account) {

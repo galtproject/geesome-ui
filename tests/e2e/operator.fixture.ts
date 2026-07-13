@@ -26,6 +26,27 @@ const accounts = [
     options: {autoPin: {enabled: false, attempts: 3, metadata: {}}}
   }
 ];
+const groupPinAccounts = [
+  {
+    id: 3,
+    userId: 7,
+    groupId: 31,
+    name: 'group-pinata',
+    service: 'pinata',
+    endpoint: '',
+    apiKey: 'visible-group-test-key',
+    isEncrypted: true,
+    options: {
+      autoPin: {
+        enabled: true,
+        attempts: 3,
+        metadata: {},
+        scope: 'group-post',
+        targets: ['post-manifest']
+      }
+    }
+  }
+];
 const storageOverview = {
   contentRowsCount: 8,
   contentStorageObjectsCount: 5,
@@ -680,6 +701,10 @@ Vue.prototype.$geesome = {
     calls.push({type: 'getUserPinAccounts'});
     return {list: accounts};
   },
+  async getGroupPinAccounts(groupId) {
+    calls.push({type: 'getGroupPinAccounts', groupId});
+    return {list: groupPinAccounts};
+  },
   async createPinAccount(accountData) {
     calls.push({type: 'createPinAccount', accountData});
     return {...accountData, id: 2};
@@ -687,8 +712,12 @@ Vue.prototype.$geesome = {
   async updatePinAccount(accountId, accountData) {
     calls.push({type: 'updatePinAccount', accountId, accountData});
     const account = accounts.find(item => item.id === accountId);
+    const groupAccount = groupPinAccounts.find(item => item.id === accountId);
     if (account) {
       Object.assign(account, accountData);
+    }
+    if (groupAccount) {
+      Object.assign(groupAccount, accountData);
     }
     return {...accountData, id: accountId};
   },
@@ -1218,6 +1247,7 @@ new Vue({
       <bluesky-sources-page v-else-if="currentPage === 'bluesky-sources'" />
       <social-migration-page v-else-if="currentPage === 'social-migration'" />
       <activity-pub-remote-objects-page v-else-if="currentPage === 'activitypub'" :group="activityPubGroup" />
+      <pin-services v-else-if="currentPage === 'group-pin-services'" :group-id="postFixtureGroup.id" />
       <pin-services v-else />
     </main>
   `
@@ -1253,6 +1283,9 @@ function getCurrentPage() {
   }
   if (window.location.hash === '#social-migration') {
     return 'social-migration';
+  }
+  if (window.location.hash === '#group-pin-services') {
+    return 'group-pin-services';
   }
   return 'pin-services';
 }

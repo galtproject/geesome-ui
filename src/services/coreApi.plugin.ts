@@ -133,6 +133,10 @@ export default {
         return geesomeClient.getRequest('user/pin/user-accounts').catch(this.onError);
       },
 
+      getGroupPinAccounts(groupId) {
+        return geesomeClient.getRequest(`user/pin/group-accounts/${encodeURIComponent(groupId)}`).catch(this.onError);
+      },
+
       createPinAccount(accountData) {
         return geesomeClient.postRequest('user/pin/create-account', accountData).catch(this.onError);
       },

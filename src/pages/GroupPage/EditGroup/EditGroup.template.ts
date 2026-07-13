@@ -25,6 +25,8 @@ module.exports = `
           </div>
         </md-card-content>
       </md-card>
+
+      <pin-services v-if="group && group.id" :group-id="group.id"></pin-services>
     </div>
     
     <div class="md-layout-item md-size-50 md-xsmall-size-100 faq-block">
