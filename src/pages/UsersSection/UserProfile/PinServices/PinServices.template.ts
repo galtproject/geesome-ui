@@ -36,6 +36,42 @@ module.exports = `
       </md-field>
 
       <md-checkbox v-model="form.isEncrypted" class="md-primary">Encrypt secret on this node</md-checkbox>
+
+      <md-switch v-model="form.autoPinEnabled" class="md-primary">Automatically pin new uploads</md-switch>
+
+      <details v-if="form.autoPinEnabled" style="margin-top: 12px;">
+        <summary>Automatic pin settings</summary>
+
+        <md-field>
+          <label>Retry attempts</label>
+          <md-input v-model.number="form.autoPinAttempts" type="number" min="1" max="10"></md-input>
+        </md-field>
+
+        <div v-for="(row, index) in form.autoPinMetadataRows" :key="index" class="md-layout md-gutter" style="align-items: center;">
+          <div class="md-layout-item md-size-40 md-small-size-40">
+            <md-field>
+              <label>Metadata key</label>
+              <md-input v-model="row.key"></md-input>
+            </md-field>
+          </div>
+          <div class="md-layout-item md-size-40 md-small-size-40">
+            <md-field>
+              <label>Metadata value</label>
+              <md-input v-model="row.value"></md-input>
+            </md-field>
+          </div>
+          <div class="md-layout-item md-size-20 md-small-size-20">
+            <md-button class="md-icon-button" @click="removeAutoPinMetadataRow(index)" aria-label="Remove automatic pin metadata">
+              <md-icon>delete</md-icon>
+            </md-button>
+          </div>
+        </div>
+
+        <md-button class="md-primary" @click="addAutoPinMetadataRow" aria-label="Add automatic pin metadata">
+          <md-icon>add</md-icon>
+          Add metadata
+        </md-button>
+      </details>
     </md-card-content>
 
     <md-card-actions>
@@ -59,7 +95,10 @@ module.exports = `
 
     <md-table-row v-for="item in pinAccounts" :key="item.id">
       <md-table-cell>{{item.name}}</md-table-cell>
-      <md-table-cell>{{item.service | prettyName}}</md-table-cell>
+      <md-table-cell>
+        <div>{{item.service | prettyName}}</div>
+        <small v-if="item.autoPinEnabled">Auto pin enabled</small>
+      </md-table-cell>
       <md-table-cell>{{item.endpoint || 'Default Pinata endpoint'}}</md-table-cell>
       <md-table-cell>{{item.isEncrypted ? 'Yes' : 'No'}}</md-table-cell>
       <md-table-cell>
