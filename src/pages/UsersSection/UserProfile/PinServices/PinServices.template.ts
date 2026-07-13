@@ -1,7 +1,7 @@
 module.exports = `
 <div>
   <div style="display: flex; justify-content: space-between; align-items: center;">
-    <h3>Pin services</h3>
+    <h3>{{sectionTitle}}</h3>
 
     <md-button class="md-primary" @click="addPinAccount">Add pin service</md-button>
   </div>
@@ -37,7 +37,13 @@ module.exports = `
 
       <md-checkbox v-model="form.isEncrypted" class="md-primary">Encrypt secret on this node</md-checkbox>
 
-      <md-switch v-model="form.autoPinEnabled" class="md-primary">Automatically pin new uploads</md-switch>
+      <md-switch v-model="form.autoPinEnabled" class="md-primary">{{automaticPinLabel}}</md-switch>
+
+      <div v-if="isGroupMode && form.autoPinEnabled" aria-label="Automatic group pin targets">
+        <md-checkbox v-model="form.autoPinPostManifest" class="md-primary">Post manifests</md-checkbox>
+        <md-checkbox v-model="form.autoPinContents" class="md-primary">Attachments and content</md-checkbox>
+        <div v-if="hasInvalidAutoPinTargets" class="md-error">Select at least one automatic pin target.</div>
+      </div>
 
       <details v-if="form.autoPinEnabled" style="margin-top: 12px;">
         <summary>Automatic pin settings</summary>
@@ -80,7 +86,30 @@ module.exports = `
     </md-card-actions>
   </md-card>
 
-  <md-table>
+  <div v-if="isGroupMode">
+    <div v-if="!loading && !pinAccounts.length" style="padding: 16px 0;">No group pin services configured.</div>
+    <div
+      v-for="item in pinAccounts"
+      :key="item.id"
+      style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.12);"
+    >
+      <div style="min-width: 0; flex: 1; overflow-wrap: anywhere;">
+        <strong>{{item.name}}</strong>
+        <div>{{item.service | prettyName}} · {{item.autoPinEnabled ? 'Auto pin: ' + item.autoPinTargetsLabel : 'Automatic pinning off'}}</div>
+        <small>{{item.endpoint || 'Default Pinata endpoint'}} · {{item.isEncrypted ? 'Secret encrypted' : 'Secret stored as entered'}}</small>
+      </div>
+      <div style="display: flex; flex: 0 0 auto;">
+        <md-button class="md-accent md-icon-button" @click="editPinAccount(item)" :aria-label="'Edit pin service ' + item.name">
+          <md-icon>edit</md-icon>
+        </md-button>
+        <md-button class="md-accent md-icon-button" @click="deletePinAccount(item)" :disabled="deletingId === item.id" :aria-label="'Delete pin service ' + item.name">
+          <md-icon>delete</md-icon>
+        </md-button>
+      </div>
+    </div>
+  </div>
+
+  <md-table v-else>
     <md-table-row>
       <md-table-head>Name</md-table-head>
       <md-table-head>Service</md-table-head>
@@ -97,7 +126,7 @@ module.exports = `
       <md-table-cell>{{item.name}}</md-table-cell>
       <md-table-cell>
         <div>{{item.service | prettyName}}</div>
-        <small v-if="item.autoPinEnabled">Auto pin enabled</small>
+        <small v-if="item.autoPinEnabled">{{isGroupMode ? 'Auto pin: ' + item.autoPinTargetsLabel : 'Auto pin enabled'}}</small>
       </md-table-cell>
       <md-table-cell>{{item.endpoint || 'Default Pinata endpoint'}}</md-table-cell>
       <md-table-cell>{{item.isEncrypted ? 'Yes' : 'No'}}</md-table-cell>
@@ -112,7 +141,7 @@ module.exports = `
     </md-table-row>
   </md-table>
 
-  <md-card style="margin-top: 24px;">
+  <md-card v-if="!isGroupMode" style="margin-top: 24px;">
     <md-card-header>
       <div class="md-title">Pin uploaded content</div>
     </md-card-header>

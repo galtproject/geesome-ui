@@ -105,3 +105,44 @@ test('pin services UI configures accounts and pins uploaded content (dual viewpo
   await expect(page.getByText('Last pin status: ok', {exact: true})).toBeVisible();
   await saveShot(page, 'pin-services-after-pin-desktop.png');
 });
+
+test('group settings configure explicit automatic pin targets (dual viewport)', async ({page, baseURL}) => {
+  await page.setViewportSize(MOBILE_VIEWPORT);
+  await page.goto(`${baseURL}/#group-pin-services`);
+
+  await expect(page.getByRole('heading', {name: 'Group pin services'})).toBeVisible();
+  await expect(page.getByText('group-pinata', {exact: true})).toBeVisible();
+  await expect(page.getByText(/Auto pin: manifests/)).toBeVisible();
+  await expect(page.getByText('Pin uploaded content')).toHaveCount(0);
+  await saveShot(page, 'group-pin-services-mobile.png');
+
+  await page.setViewportSize(DESKTOP_VIEWPORT);
+  await saveShot(page, 'group-pin-services-desktop.png');
+  await page.getByRole('button', {name: 'Edit pin service group-pinata'}).click();
+
+  await expect(materialSwitch(page, 'Automatically pin published group posts')).toBeVisible();
+  await expect(page.getByText('Post manifests', {exact: true})).toBeVisible();
+  await expect(page.getByText('Attachments and content', {exact: true})).toBeVisible();
+  await page.getByText('Post manifests', {exact: true}).click();
+  await expect(page.getByText('Select at least one automatic pin target.')).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Save', exact: true})).toBeDisabled();
+  await page.getByText('Attachments and content', {exact: true}).click();
+  await saveShot(page, 'group-pin-services-targets-desktop.png');
+  await page.getByRole('button', {name: 'Save', exact: true}).click();
+
+  await expect.poll(async () => (await calls(page, 'updatePinAccount')).length).toBe(1);
+  const updateCalls = await calls(page, 'updatePinAccount');
+  expect(updateCalls[0]).toMatchObject({
+    accountId: 3,
+    accountData: {
+      groupId: 31,
+      options: {
+        autoPin: {
+          enabled: true,
+          scope: 'group-post',
+          targets: ['contents']
+        }
+      }
+    }
+  });
+});

@@ -10,12 +10,13 @@
 import {EventBus, UPDATE_ADMIN_GROUPS} from "../../../services/events";
 import ContentManifestItem from "../../../directives/ContentManifestItem/ContentManifestItem";
 import GroupForm from "../GroupForm/GroupForm";
+import PinServices from "../../UsersSection/UserProfile/PinServices/PinServices";
 import common from "../../../libs/common";
 const commonHelpers = require("geesome-libs/src/common");
 
 export default {
   template: require('./EditGroup.template'),
-  components: {ContentManifestItem, GroupForm},
+  components: {ContentManifestItem, GroupForm, PinServices},
   async created() {
     this.group = await this.$geesome.getDbGroup(this.$route.params.groupId);
   },
