@@ -22,7 +22,8 @@ const accounts = [
     service: 'pinata',
     endpoint: '',
     apiKey: 'visible-test-key',
-    isEncrypted: true
+    isEncrypted: true,
+    options: {autoPin: {enabled: false, attempts: 3, metadata: {}}}
   }
 ];
 const storageOverview = {
@@ -685,6 +686,10 @@ Vue.prototype.$geesome = {
   },
   async updatePinAccount(accountId, accountData) {
     calls.push({type: 'updatePinAccount', accountId, accountData});
+    const account = accounts.find(item => item.id === accountId);
+    if (account) {
+      Object.assign(account, accountData);
+    }
     return {...accountData, id: accountId};
   },
   async deletePinAccount(accountId) {
@@ -726,7 +731,7 @@ Vue.prototype.$geesome = {
   },
   async pinContentByUserAccount(accountName, storageId, options) {
     calls.push({type: 'pinContentByUserAccount', accountName, storageId, options});
-    return {status: 200, statusText: 'OK', data: {IpfsHash: storageId}};
+    return {IpfsHash: storageId};
   },
   async adminGetStorageSpaceOverview() {
     calls.push({type: 'adminGetStorageSpaceOverview'});

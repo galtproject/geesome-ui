@@ -9,35 +9,6 @@
 
 const clone = require('lodash/clone');
 
-const emptyAccount = () => ({
-  name: 'pinata',
-  service: 'pinata',
-  endpoint: '',
-  apiKey: '',
-  secretApiKey: '',
-  isEncrypted: true
-});
-
-function toAccountPayload(form) {
-  const payload: any = {
-    name: form.name,
-    service: form.service,
-    apiKey: form.apiKey,
-    isEncrypted: !!form.isEncrypted
-  };
-  if (form.endpoint) {
-    payload.endpoint = form.endpoint;
-  }
-  if (form.secretApiKey) {
-    payload.secretApiKey = form.secretApiKey;
-  }
-  return payload;
-}
-
-function getAccountName(account) {
-  return account ? account.name : '';
-}
-
 export default {
   template: require('./PinServices.template'),
   components: {},
@@ -50,7 +21,7 @@ export default {
       this.loading = true;
       try {
         const response = await this.$geesome.getUserPinAccounts();
-        this.pinAccounts = response.list || [];
+        this.pinAccounts = (response.list || []).map(normalizeAccount);
         if (!this.pinAccountName && this.pinAccounts.length) {
           this.pinAccountName = getAccountName(this.pinAccounts[0]);
         }
@@ -64,10 +35,16 @@ export default {
     },
     editPinAccount(account) {
       this.form = {
-        ...clone(account),
+        ...normalizeAccount(clone(account)),
         secretApiKey: ''
       };
       this.isFormVisible = true;
+    },
+    addAutoPinMetadataRow() {
+      this.form.autoPinMetadataRows.push({key: '', value: ''});
+    },
+    removeAutoPinMetadataRow(index) {
+      this.form.autoPinMetadataRows.splice(index, 1);
     },
     cancelPinAccount() {
       this.form = emptyAccount();
@@ -155,7 +132,19 @@ export default {
   watch: {},
   computed: {
     isSaveDisabled() {
-      return this.saving || !this.form.name || !this.form.service || !this.form.apiKey || (!this.form.id && !this.form.secretApiKey);
+      return this.saving
+        || !this.form.name
+        || !this.form.service
+        || !this.form.apiKey
+        || (!this.form.id && !this.form.secretApiKey)
+        || this.hasInvalidAutoPinMetadata;
+    },
+    hasInvalidAutoPinMetadata() {
+      if (!this.form.autoPinEnabled) {
+        return false;
+      }
+      const keys = this.form.autoPinMetadataRows.map(row => String(row.key || '').trim());
+      return keys.some(key => !key) || new Set(keys).size !== keys.length;
     },
     isPinDisabled() {
       return this.pinning || !this.pinAccountName || !this.pinStorageId;
@@ -176,4 +165,98 @@ export default {
       lastPinResult: null
     };
   }
+}
+
+function emptyAccount() {
+  return {
+    name: 'pinata',
+    service: 'pinata',
+    endpoint: '',
+    apiKey: '',
+    secretApiKey: '',
+    isEncrypted: true,
+    autoPinEnabled: false,
+    autoPinAttempts: 3,
+    autoPinMetadataRows: []
+  };
+}
+
+function toAccountPayload(form) {
+  const accountOptions = getAccountOptions(form);
+  const autoPinOptions = accountOptions.autoPin || {};
+  const payload: any = {
+    name: form.name,
+    service: form.service,
+    apiKey: form.apiKey,
+    isEncrypted: !!form.isEncrypted
+  };
+  if (form.endpoint) {
+    payload.endpoint = form.endpoint;
+  }
+  if (form.secretApiKey) {
+    payload.secretApiKey = form.secretApiKey;
+  }
+  payload.options = {
+    ...accountOptions,
+    autoPin: {
+      ...autoPinOptions,
+      enabled: !!form.autoPinEnabled,
+      attempts: normalizeAutoPinAttempts(form.autoPinAttempts),
+      metadata: getAutoPinMetadata(form.autoPinMetadataRows)
+    }
+  };
+  return payload;
+}
+
+function getAccountName(account) {
+  return account ? account.name : '';
+}
+
+function normalizeAccount(account) {
+  const options = getAccountOptions(account);
+  const autoPin = options.autoPin || {};
+  return {
+    ...account,
+    options,
+    autoPinEnabled: autoPin.enabled === true,
+    autoPinAttempts: normalizeAutoPinAttempts(autoPin.attempts),
+    autoPinMetadataRows: Object.keys(autoPin.metadata || {}).map(key => ({
+      key,
+      value: String(autoPin.metadata[key])
+    }))
+  };
+}
+
+function getAccountOptions(account) {
+  if (!account || !account.options) {
+    return {};
+  }
+  if (typeof account.options === 'object') {
+    return account.options;
+  }
+  try {
+    const options = JSON.parse(account.options);
+    return options && typeof options === 'object' ? options : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function normalizeAutoPinAttempts(value) {
+  const attempts = Number.parseInt(value, 10);
+  if (!Number.isFinite(attempts)) {
+    return 3;
+  }
+  return Math.min(Math.max(attempts, 1), 10);
+}
+
+function getAutoPinMetadata(rows) {
+  const metadata = {};
+  (rows || []).forEach(row => {
+    const key = String(row.key || '').trim();
+    if (key) {
+      metadata[key] = String(row.value || '');
+    }
+  });
+  return metadata;
 }

@@ -24,6 +24,10 @@ async function calls(page, type) {
   }, type);
 }
 
+function materialSwitch(page, label) {
+  return page.locator(`xpath=//*[contains(concat(" ", normalize-space(@class), " "), " md-switch ")][normalize-space(.)="${label}"]`);
+}
+
 test('pin services UI configures accounts and pins uploaded content (dual viewport)', async ({page, baseURL}) => {
   await page.setViewportSize(MOBILE_VIEWPORT);
   await page.goto(baseURL);
@@ -39,6 +43,37 @@ test('pin services UI configures accounts and pins uploaded content (dual viewpo
   await expect(page.getByRole('button', {name: 'Delete pin service pinata-main'})).toBeVisible();
   await expect(page.getByRole('button', {name: 'Edit pin service pinata-main'})).toBeVisible();
   await saveShot(page, 'pin-services-desktop.png');
+
+  await page.setViewportSize(MOBILE_VIEWPORT);
+  await page.getByRole('button', {name: 'Edit pin service pinata-main'}).click();
+  await materialSwitch(page, 'Automatically pin new uploads').locator('.md-switch-container').click();
+  await page.getByText('Automatic pin settings', {exact: true}).click();
+  await page.locator('input[type=number]').fill('5');
+  await page.getByRole('button', {name: 'Add automatic pin metadata'}).click();
+  await page.getByLabel('Metadata key').fill('collection');
+  await page.getByLabel('Metadata value').fill('uploads');
+  await saveShot(page, 'pin-services-auto-pin-form-mobile.png');
+
+  await page.setViewportSize(DESKTOP_VIEWPORT);
+  await saveShot(page, 'pin-services-auto-pin-form-desktop.png');
+  await page.getByRole('button', {name: 'Save', exact: true}).click();
+
+  await expect.poll(async () => (await calls(page, 'updatePinAccount')).length).toBe(1);
+  const updateCalls = await calls(page, 'updatePinAccount');
+  expect(updateCalls[0]).toMatchObject({
+    accountId: 1,
+    accountData: {
+      options: {
+        autoPin: {
+          enabled: true,
+          attempts: 5,
+          metadata: {collection: 'uploads'}
+        }
+      }
+    }
+  });
+  await expect(page.getByText('Auto pin enabled', {exact: true})).toBeVisible();
+  await saveShot(page, 'pin-services-auto-pin-desktop.png');
 
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', {name: 'Delete pin service pinata-main'}).click();
@@ -67,6 +102,6 @@ test('pin services UI configures accounts and pins uploaded content (dual viewpo
       contentDbId: 77
     }
   });
-  await expect(page.getByText('Last pin status: 200 OK')).toBeVisible();
+  await expect(page.getByText('Last pin status: ok', {exact: true})).toBeVisible();
   await saveShot(page, 'pin-services-after-pin-desktop.png');
 });
