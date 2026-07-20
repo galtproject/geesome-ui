@@ -35,9 +35,30 @@ test('pin services UI configures accounts and pins uploaded content (dual viewpo
   await expect(page.getByRole('heading', {name: 'Pin services'})).toBeVisible();
   await expect(page.getByText('pinata-main', {exact: true})).toBeVisible();
   await expect(page.getByText('Default Pinata endpoint')).toBeVisible();
+  await expect(page.getByText('Needs attention', {exact: true})).toBeVisible();
+  await expect(page.getByText('2 confirmed · 1 provider accepted · 1 failed or missing', {exact: true})).toBeVisible();
   await expect(page.getByText('Pin uploaded content')).toBeVisible();
   await expect(page.getByRole('button', {name: 'Pin uploaded content'})).toBeDisabled();
   await saveShot(page, 'pin-services-mobile.png');
+
+  await page.getByText('Diagnostics and history', {exact: true}).click();
+  await expect(page.getByLabel('Pin account status counts')).toBeVisible();
+  await expect(page.getByText('bafy-pin-retry', {exact: true})).toBeVisible();
+  await expect(page.getByText('Retry scheduled', {exact: true})).toBeVisible();
+  await page.getByRole('button', {name: 'Test credentials for pin service pinata-main'}).click();
+  await expect.poll(async () => (await calls(page, 'testPinAccountCredentials')).length).toBe(1);
+  await expect(page.getByText(/Credentials verified/)).toBeVisible();
+  await page.getByRole('button', {name: 'Retry pin check bafy-pin-retry'}).click();
+  await expect.poll(async () => (await calls(page, 'reconcilePinAccount')).length).toBe(1);
+  await expect(page.getByText('1 pin check queued', {exact: true})).toBeVisible();
+  await saveShot(page, 'pin-services-health-mobile.png');
+
+  await page.getByRole('button', {name: 'Reconcile pin service pinata-main'}).click();
+  await expect.poll(async () => (await calls(page, 'reconcilePinAccount')).length).toBe(2);
+  const reconcileCalls = await calls(page, 'reconcilePinAccount');
+  expect(reconcileCalls[0]).toMatchObject({accountId: 1, options: {storageId: 'bafy-pin-retry'}});
+  expect(reconcileCalls[1]).toMatchObject({accountId: 1, options: {limit: 20}});
+  await expect(page.getByText('2 pin checks queued', {exact: true})).toBeVisible();
 
   await page.setViewportSize(DESKTOP_VIEWPORT);
   await expect(page.getByRole('button', {name: 'Delete pin service pinata-main'})).toBeVisible();
@@ -113,6 +134,8 @@ test('group settings configure explicit automatic pin targets (dual viewport)', 
   await expect(page.getByRole('heading', {name: 'Group pin services'})).toBeVisible();
   await expect(page.getByText('group-pinata', {exact: true})).toBeVisible();
   await expect(page.getByText(/Auto pin: manifests/)).toBeVisible();
+  await expect(page.getByText('Checking', {exact: true})).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Reconcile pin service group-pinata'})).toBeVisible();
   await expect(page.getByText('Pin uploaded content')).toHaveCount(0);
   await saveShot(page, 'group-pin-services-mobile.png');
 

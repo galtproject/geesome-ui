@@ -47,6 +47,75 @@ const groupPinAccounts = [
     }
   }
 ];
+const pinAccountHealth = {
+  1: {
+    accountId: 1,
+    service: 'pinata',
+    totalCount: 4,
+    statusCounts: {
+      requested: 0,
+      accepted: 1,
+      confirmed: 2,
+      missing: 0,
+      retryableFailure: 1,
+      terminalFailure: 0
+    },
+    dueReconciliationCount: 1,
+    activeClaimCount: 0,
+    lastCheckedAt: '2026-07-20T18:05:00.000Z',
+    lastSuccessfulCheckAt: '2026-07-20T18:00:00.000Z',
+    lastError: {
+      storageId: 'bafy-pin-retry',
+      status: 'retryable_failure',
+      code: 'provider_timeout',
+      message: 'Provider check timed out',
+      failedAt: '2026-07-20T18:04:00.000Z'
+    },
+    recent: [
+      {
+        storageId: 'bafy-pin-retry',
+        status: 'retryable_failure',
+        attemptCount: 2,
+        reconcileAttemptCount: 1,
+        lastReconcileAt: '2026-07-20T18:04:00.000Z'
+      },
+      {
+        storageId: 'bafy-pin-confirmed',
+        status: 'confirmed',
+        attemptCount: 1,
+        reconcileAttemptCount: 1,
+        checkedAt: '2026-07-20T18:00:00.000Z'
+      }
+    ]
+  },
+  3: {
+    accountId: 3,
+    service: 'pinata',
+    totalCount: 2,
+    statusCounts: {
+      requested: 0,
+      accepted: 1,
+      confirmed: 1,
+      missing: 0,
+      retryableFailure: 0,
+      terminalFailure: 0
+    },
+    dueReconciliationCount: 0,
+    activeClaimCount: 1,
+    lastCheckedAt: '2026-07-20T18:02:00.000Z',
+    lastSuccessfulCheckAt: '2026-07-20T18:00:00.000Z',
+    lastError: null,
+    recent: [
+      {
+        storageId: 'bafy-group-accepted',
+        status: 'accepted',
+        attemptCount: 1,
+        reconcileAttemptCount: 1,
+        lastReconcileAt: '2026-07-20T18:02:00.000Z'
+      }
+    ]
+  }
+};
 const storageOverview = {
   contentRowsCount: 8,
   contentStorageObjectsCount: 5,
@@ -724,6 +793,18 @@ Vue.prototype.$geesome = {
   async deletePinAccount(accountId) {
     calls.push({type: 'deletePinAccount', accountId});
     return {success: true};
+  },
+  async testPinAccountCredentials(accountId) {
+    calls.push({type: 'testPinAccountCredentials', accountId});
+    return {ok: true, service: 'pinata', checkedAt: '2026-07-20T18:10:00.000Z'};
+  },
+  async getPinAccountHealth(accountId, options) {
+    calls.push({type: 'getPinAccountHealth', accountId, options});
+    return pinAccountHealth[accountId];
+  },
+  async reconcilePinAccount(accountId, options) {
+    calls.push({type: 'reconcilePinAccount', accountId, options});
+    return {queued: options && options.storageId ? 1 : 2, accountId};
   },
   async getGroup(groupId) {
     calls.push({type: 'getGroup', groupId});

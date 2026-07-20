@@ -22,6 +22,7 @@ $me-controls-path: "../../node_modules/mediaelement/build";
 @import 'node_modules/geesome-vue-components/src/modals/AsyncModal/modal';
 
 @import "chat";
+@import "pin-services";
 
 .md-app-content {
   display: flex;

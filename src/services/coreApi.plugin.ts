@@ -149,6 +149,18 @@ export default {
         return geesomeClient.postRequest(`user/pin/delete-account/${accountId}`).catch(this.onError);
       },
 
+      testPinAccountCredentials(accountId) {
+        return geesomeClient.postRequest(`user/pin/account/${accountId}/test-credentials`).catch(this.onError);
+      },
+
+      getPinAccountHealth(accountId, options: any = {}) {
+        return geesomeClient.getRequest(`user/pin/account/${accountId}/health`, {params: options}).catch(this.onError);
+      },
+
+      reconcilePinAccount(accountId, options: any = {}) {
+        return geesomeClient.postRequest(`user/pin/account/${accountId}/reconcile`, options).catch(this.onError);
+      },
+
       pinContentByUserAccount(accountName, storageId, options: any = {}) {
         return geesomeClient.postRequest(
           `user/pin/account/${encodeURIComponent(accountName)}/pin-content/${encodeURIComponent(storageId)}/by-user`,
