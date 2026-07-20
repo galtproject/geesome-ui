@@ -86,60 +86,133 @@ module.exports = `
     </md-card-actions>
   </md-card>
 
-  <div v-if="isGroupMode">
-    <div v-if="!loading && !pinAccounts.length" style="padding: 16px 0;">No group pin services configured.</div>
-    <div
-      v-for="item in pinAccounts"
-      :key="item.id"
-      style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.12);"
-    >
-      <div style="min-width: 0; flex: 1; overflow-wrap: anywhere;">
-        <strong>{{item.name}}</strong>
-        <div>{{item.service | prettyName}} · {{item.autoPinEnabled ? 'Auto pin: ' + item.autoPinTargetsLabel : 'Automatic pinning off'}}</div>
-        <small>{{item.endpoint || 'Default Pinata endpoint'}} · {{item.isEncrypted ? 'Secret encrypted' : 'Secret stored as entered'}}</small>
-      </div>
-      <div style="display: flex; flex: 0 0 auto;">
-        <md-button class="md-accent md-icon-button" @click="editPinAccount(item)" :aria-label="'Edit pin service ' + item.name">
-          <md-icon>edit</md-icon>
-        </md-button>
-        <md-button class="md-accent md-icon-button" @click="deletePinAccount(item)" :disabled="deletingId === item.id" :aria-label="'Delete pin service ' + item.name">
-          <md-icon>delete</md-icon>
-        </md-button>
-      </div>
+  <div class="pin-services-account-list">
+    <div v-if="!loading && !pinAccounts.length" class="pin-services-empty">
+      {{isGroupMode ? 'No group pin services configured.' : 'No pin services configured.'}}
     </div>
+
+    <section v-for="item in pinAccounts" :key="item.id" class="pin-services-account">
+      <div class="pin-services-account-main">
+        <div class="pin-services-account-identity">
+          <div class="pin-services-account-title">
+            <strong>{{item.name}}</strong>
+            <span
+              class="pin-services-status"
+              :class="'pin-services-status-' + getAccountHealthState(item).key"
+            >{{getAccountHealthState(item).label}}</span>
+          </div>
+          <div class="pin-services-account-summary">{{getAccountHealthSummary(item)}}</div>
+          <small v-if="reconcileResultsById[item.id]" class="pin-services-reconcile-result">
+            {{getQueuedChecksLabel(reconcileResultsById[item.id])}}
+          </small>
+          <small>
+            {{item.service | prettyName}} ·
+            <span>{{item.autoPinEnabled ? (isGroupMode ? 'Auto pin: ' + item.autoPinTargetsLabel : 'Auto pin enabled') : 'Automatic pinning off'}}</span>
+          </small>
+          <small>{{item.endpoint || 'Default Pinata endpoint'}} · {{item.isEncrypted ? 'Secret encrypted' : 'Secret stored as entered'}}</small>
+        </div>
+
+        <div class="pin-services-account-actions">
+          <md-button
+            class="md-primary md-icon-button"
+            @click="reconcilePinAccount(item)"
+            :disabled="reconcilingId === item.id"
+            :aria-label="'Reconcile pin service ' + item.name"
+            title="Reconcile pin account"
+          >
+            <md-icon>sync</md-icon>
+          </md-button>
+          <md-button class="md-accent md-icon-button" @click="editPinAccount(item)" :aria-label="'Edit pin service ' + item.name" title="Edit pin account">
+            <md-icon>edit</md-icon>
+          </md-button>
+          <md-button class="md-accent md-icon-button" @click="deletePinAccount(item)" :disabled="deletingId === item.id" :aria-label="'Delete pin service ' + item.name" title="Delete pin account">
+            <md-icon>delete</md-icon>
+          </md-button>
+        </div>
+      </div>
+
+      <details class="pin-services-diagnostics">
+        <summary>Diagnostics and history</summary>
+
+        <div class="pin-services-diagnostics-actions">
+          <md-button
+            class="md-raised"
+            @click="testPinAccountCredentials(item)"
+            :disabled="credentialTestingId === item.id"
+            :aria-label="'Test credentials for pin service ' + item.name"
+          >
+            <md-icon>verified_user</md-icon>
+            Test credentials
+          </md-button>
+          <md-button
+            class="md-icon-button"
+            @click="loadPinAccountHealth(item)"
+            :disabled="healthLoadingById[item.id]"
+            :aria-label="'Refresh status for pin service ' + item.name"
+            title="Refresh account status"
+          >
+            <md-icon>refresh</md-icon>
+          </md-button>
+        </div>
+
+        <div
+          v-if="credentialResultsById[item.id]"
+          class="pin-services-credential-result"
+          :class="credentialResultsById[item.id].ok ? 'success' : 'error'"
+        >
+          {{credentialResultsById[item.id].ok
+            ? 'Credentials verified ' + formatPinDate(credentialResultsById[item.id].checkedAt)
+            : credentialResultsById[item.id].message}}
+        </div>
+
+        <div v-if="getAccountHealth(item)" class="pin-services-metrics" aria-label="Pin account status counts">
+          <div><span>Total</span><strong>{{getAccountHealth(item).totalCount}}</strong></div>
+          <div><span>Confirmed</span><strong>{{getStatusCount(getAccountHealth(item), 'confirmed')}}</strong></div>
+          <div><span>Provider accepted</span><strong>{{getStatusCount(getAccountHealth(item), 'accepted')}}</strong></div>
+          <div><span>Queued</span><strong>{{getStatusCount(getAccountHealth(item), 'requested')}}</strong></div>
+          <div><span>Stale</span><strong>{{getAccountHealth(item).dueReconciliationCount}}</strong></div>
+          <div><span>Failed or missing</span><strong>{{getFailureCount(getAccountHealth(item))}}</strong></div>
+        </div>
+
+        <div v-if="getAccountHealth(item)" class="pin-services-check-summary">
+          <span>Last confirmed check: {{formatPinDate(getAccountHealth(item).lastSuccessfulCheckAt)}}</span>
+          <span>Last provider check: {{formatPinDate(getAccountHealth(item).lastCheckedAt)}}</span>
+        </div>
+
+        <div v-if="getAccountHealth(item) && getAccountHealth(item).lastError" class="pin-services-last-error">
+          <strong>Latest error</strong>
+          <span>{{getAccountHealth(item).lastError.message || getAccountHealth(item).lastError.code || 'Unknown provider error'}}</span>
+          <small>{{getAccountHealth(item).lastError.storageId}} · {{formatPinDate(getAccountHealth(item).lastError.failedAt)}}</small>
+        </div>
+
+        <div v-if="getAccountHealth(item) && getAccountHealth(item).recent.length" class="pin-services-history">
+          <h4>Recent pin checks</h4>
+          <div v-for="entry in getAccountHealth(item).recent" :key="entry.storageId" class="pin-services-history-row">
+            <div class="pin-services-history-identity">
+              <strong class="pin-services-storage-id">{{entry.storageId}}</strong>
+              <small>Checked {{formatPinDate(entry.checkedAt || entry.lastReconcileAt || entry.lastAttemptAt)}}</small>
+            </div>
+            <div class="pin-services-history-actions">
+              <span class="pin-services-status" :class="'pin-services-status-' + getPinEntryStatusKey(entry.status)">
+                {{getPinEntryStatusLabel(entry.status)}}
+              </span>
+              <md-button
+                v-if="canRetryPinEntry(entry.status)"
+                class="md-primary md-icon-button"
+                @click="reconcilePinAccount(item, {storageId: entry.storageId})"
+                :disabled="reconcilingId === item.id"
+                :aria-label="'Retry pin check ' + entry.storageId"
+                title="Retry this pin check"
+              >
+                <md-icon>replay</md-icon>
+              </md-button>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="getAccountHealth(item)" class="pin-services-empty-history">No pin checks recorded yet.</div>
+      </details>
+    </section>
   </div>
-
-  <md-table v-else>
-    <md-table-row>
-      <md-table-head>Name</md-table-head>
-      <md-table-head>Service</md-table-head>
-      <md-table-head>Endpoint</md-table-head>
-      <md-table-head>Encrypted</md-table-head>
-      <md-table-head></md-table-head>
-    </md-table-row>
-
-    <md-table-row v-if="!loading && !pinAccounts.length">
-      <md-table-cell colspan="5">No pin services configured.</md-table-cell>
-    </md-table-row>
-
-    <md-table-row v-for="item in pinAccounts" :key="item.id">
-      <md-table-cell>{{item.name}}</md-table-cell>
-      <md-table-cell>
-        <div>{{item.service | prettyName}}</div>
-        <small v-if="item.autoPinEnabled">{{isGroupMode ? 'Auto pin: ' + item.autoPinTargetsLabel : 'Auto pin enabled'}}</small>
-      </md-table-cell>
-      <md-table-cell>{{item.endpoint || 'Default Pinata endpoint'}}</md-table-cell>
-      <md-table-cell>{{item.isEncrypted ? 'Yes' : 'No'}}</md-table-cell>
-      <md-table-cell>
-        <md-button class="md-accent md-icon-button" @click="editPinAccount(item)" :aria-label="'Edit pin service ' + item.name">
-          <md-icon>edit</md-icon>
-        </md-button>
-        <md-button class="md-accent md-icon-button" @click="deletePinAccount(item)" :disabled="deletingId === item.id" :aria-label="'Delete pin service ' + item.name">
-          <md-icon>delete</md-icon>
-        </md-button>
-      </md-table-cell>
-    </md-table-row>
-  </md-table>
 
   <md-card v-if="!isGroupMode" style="margin-top: 24px;">
     <md-card-header>
