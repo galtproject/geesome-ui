@@ -1,4 +1,5 @@
 import browserE2eeHelper from 'geesome-libs-e2ee/src/browserE2eeHelper';
+import fileSaver from 'file-saver';
 import chatDeviceStore from '../../../services/chatDeviceStore';
 import chatDeviceTrustStore from '../../../services/chatDeviceTrustStore';
 import {
@@ -7,6 +8,14 @@ import {
   mergeEncryptedChatMessages,
   uniqueBundles
 } from '../../../services/encryptedChat';
+import {
+  createMessageAttachment,
+  createPendingChatAttachment,
+  decryptChatAttachment,
+  encryptAndUploadChatAttachment,
+  formatAttachmentSize,
+  isPreviewImage
+} from '../../../services/encryptedChatAttachments';
 
 const refreshIntervalMs = 15000;
 const messagePageSize = 100;
@@ -36,6 +45,7 @@ export default {
     if (this.refreshTimer) {
       window.clearInterval(this.refreshTimer);
     }
+    this.releaseAttachmentObjectUrls();
   },
   methods: {
     async refresh(showLoading = true) {
@@ -105,16 +115,13 @@ export default {
           continue;
         }
         try {
-          const text = await browserE2eeHelper.decryptEnvelopeText(
-            event.envelope,
-            this.localDevice,
-            senderBundle
-          );
+          const content = await this.decryptMessageContent(event.envelope, senderBundle);
           decrypted.push({
             messageId: event.messageId,
             sequence: event.sequence,
             createdAt: event.envelope.createdAt,
-            text,
+            text: content.text,
+            attachments: content.attachments,
             isOwn: event.envelope.sender.ownerId === this.ownerId,
             deliveryLabel: event.envelope.sender.ownerId === this.ownerId
               ? await this.getDeliveryLabel(event.messageId)
@@ -181,32 +188,182 @@ export default {
     },
     async sendMessage() {
       const text = this.newMessage.trim();
-      if (!text || !this.canSend) {
+      if ((!text && !this.pendingAttachments.length) || !this.canSend) {
         return;
       }
       this.sending = true;
       this.error = '';
       try {
+        let plaintext = text;
+        const envelopeOptions: any = {conversationId: this.conversationId};
+        if (this.pendingAttachments.length) {
+          const attachmentReferences = await this.preparePendingAttachments();
+          const payload = browserE2eeHelper.createChatMessagePayload(
+            text,
+            attachmentReferences
+          );
+          plaintext = payload;
+          envelopeOptions.metadata =
+            browserE2eeHelper.createChatMessageEnvelopeMetadata(payload);
+        }
         const recipients = uniqueBundles([
           ...this.recipientDeviceBundles,
           ...this.ownDeviceBundles
         ]);
         const envelope = await browserE2eeHelper.encryptEnvelope(
-          text,
+          plaintext,
           recipients,
           this.localDevice,
-          {conversationId: this.conversationId}
+          envelopeOptions
         );
         await this.$geesome.createEncryptedChatEvent(envelope, [
           this.recipientEndpoint
         ]);
         this.newMessage = '';
+        this.pendingAttachments = [];
         await this.readMessages();
       } catch (error) {
         this.error = getErrorMessage(error, 'The encrypted message could not be sent.');
       } finally {
         this.sending = false;
       }
+    },
+    selectAttachments(event) {
+      const files = Array.from(event.target.files || []);
+      event.target.value = '';
+      if (!files.length) {
+        return;
+      }
+      const available = browserE2eeHelper.constants.MAXIMUM_CHAT_ATTACHMENTS -
+        this.pendingAttachments.length;
+      if (available <= 0) {
+        this.error = 'A message can contain up to 20 attachments.';
+        return;
+      }
+      this.pendingAttachments = [
+        ...this.pendingAttachments,
+        ...files.slice(0, available).map(createPendingChatAttachment)
+      ];
+      if (files.length > available) {
+        this.error = 'A message can contain up to 20 attachments.';
+      }
+    },
+    removePendingAttachment(attachmentId) {
+      if (this.sending) {
+        return;
+      }
+      this.pendingAttachments = this.pendingAttachments.filter(
+        attachment => attachment.id !== attachmentId
+      );
+    },
+    async preparePendingAttachments() {
+      const references = [];
+      for (const pending of this.pendingAttachments) {
+        if (pending.reference) {
+          references.push(pending.reference);
+          continue;
+        }
+        try {
+          this.setPendingAttachmentState(pending.id, 'encrypting');
+          const reference = await encryptAndUploadChatAttachment(
+            pending.file,
+            file => this.$geesome.saveFile(file),
+            () => this.setPendingAttachmentState(pending.id, 'uploading')
+          );
+          this.setPendingAttachmentState(pending.id, 'ready', reference);
+          references.push(reference);
+        } catch (error) {
+          this.setPendingAttachmentState(pending.id, 'failed');
+          throw error;
+        }
+      }
+      return references;
+    },
+    setPendingAttachmentState(attachmentId, state, reference = null) {
+      this.pendingAttachments = this.pendingAttachments.map(attachment =>
+        attachment.id === attachmentId
+          ? {...attachment, state, reference: reference || attachment.reference}
+          : attachment
+      );
+    },
+    async decryptMessageContent(envelope, senderBundle) {
+      if (envelope.encoding !== 'json') {
+        return {
+          text: await browserE2eeHelper.decryptEnvelopeText(
+            envelope,
+            this.localDevice,
+            senderBundle
+          ),
+          attachments: []
+        };
+      }
+      const payload = await browserE2eeHelper.decryptEnvelopeJson(
+        envelope,
+        this.localDevice,
+        senderBundle
+      );
+      if (!browserE2eeHelper.isChatMessagePayload(payload)) {
+        throw new Error('chat_message_payload_invalid');
+      }
+      return {
+        text: payload.text,
+        attachments: payload.attachments.map(createMessageAttachment)
+      };
+    },
+    async decryptMessageAttachment(attachment) {
+      if (attachment.state === 'loading' || attachment.state === 'ready') {
+        return;
+      }
+      this.updateMessageAttachment(attachment, {state: 'loading', error: ''});
+      try {
+        const blob = await decryptChatAttachment(
+          attachment.reference,
+          storageId => this.$geesome.getContentLink(storageId)
+        );
+        this.updateMessageAttachment(attachment, {
+          state: 'ready',
+          blob,
+          objectUrl: URL.createObjectURL(blob)
+        });
+      } catch (_error) {
+        this.updateMessageAttachment(attachment, {
+          state: 'failed',
+          error: 'Attachment unavailable or failed its integrity check.'
+        });
+      }
+    },
+    downloadMessageAttachment(attachment) {
+      if (attachment.state === 'ready' && attachment.blob) {
+        fileSaver.saveAs(attachment.blob, attachment.name);
+      }
+    },
+    updateMessageAttachment(target, changes) {
+      Object.assign(target, changes);
+      this.messages = [...this.messages];
+    },
+    releaseAttachmentObjectUrls() {
+      this.messages.forEach(message => {
+        (message.attachments || []).forEach(attachment => {
+          if (attachment.objectUrl) {
+            URL.revokeObjectURL(attachment.objectUrl);
+          }
+        });
+      });
+    },
+    getPendingAttachmentStatus(attachment) {
+      if (attachment.state === 'encrypting') {
+        return 'Encrypting';
+      }
+      if (attachment.state === 'uploading') {
+        return 'Uploading ciphertext';
+      }
+      if (attachment.state === 'ready') {
+        return 'Encrypted';
+      }
+      if (attachment.state === 'failed') {
+        return 'Upload failed · retry on send';
+      }
+      return 'Selected';
     },
     async loadRecipientDeviceTrust() {
       const [fingerprints, trustedDevices] = await Promise.all([
@@ -285,7 +442,9 @@ export default {
     },
     formatDate(value) {
       return value ? new Date(value).toLocaleString() : '';
-    }
+    },
+    formatAttachmentSize,
+    isPreviewImage
   },
   computed: {
     currentDeviceRegistered() {
@@ -318,7 +477,7 @@ export default {
       return !this.sending &&
         this.recipientReady &&
         this.recipientVerified &&
-        !!this.newMessage.trim();
+        (!!this.newMessage.trim() || this.pendingAttachments.length > 0);
     }
   },
   data() {
@@ -340,6 +499,7 @@ export default {
       messageIds: new Set(),
       lastFetchedSequence: '0',
       newMessage: '',
+      pendingAttachments: [],
       refreshTimer: null
     };
   }

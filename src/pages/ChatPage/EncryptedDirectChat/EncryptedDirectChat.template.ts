@@ -85,7 +85,44 @@ module.exports = `
       <article v-for="message in messages" :key="message.messageId"
                class="encrypted-direct-chat-message"
                :class="{'is-own': message.isOwn}">
-        <div class="encrypted-direct-chat-message-text">{{message.text}}</div>
+        <div v-if="message.text" class="encrypted-direct-chat-message-text">{{message.text}}</div>
+        <div v-if="message.attachments && message.attachments.length"
+             class="encrypted-direct-chat-attachments">
+          <section v-for="attachment in message.attachments"
+                   :key="attachment.storageId"
+                   class="encrypted-direct-chat-attachment">
+            <img v-if="attachment.state === 'ready' && isPreviewImage(attachment)"
+                 :src="attachment.objectUrl" :alt="attachment.name"
+                 class="encrypted-direct-chat-attachment-preview">
+            <div class="encrypted-direct-chat-attachment-info">
+              <md-icon>{{isPreviewImage(attachment) ? 'image' : 'insert_drive_file'}}</md-icon>
+              <div>
+                <strong>{{attachment.name}}</strong>
+                <span>{{formatAttachmentSize(attachment.size)}}</span>
+              </div>
+            </div>
+            <div class="encrypted-direct-chat-attachment-actions">
+              <md-button v-if="attachment.state === 'encrypted' || attachment.state === 'failed'"
+                         class="md-icon-button"
+                         @click="decryptMessageAttachment(attachment)"
+                         :aria-label="'Decrypt attachment ' + attachment.name"
+                         title="Decrypt attachment">
+                <md-icon>lock_open</md-icon>
+              </md-button>
+              <md-progress-spinner v-else-if="attachment.state === 'loading'"
+                                   :md-diameter="24" :md-stroke="3"
+                                   md-mode="indeterminate"></md-progress-spinner>
+              <md-button v-else-if="attachment.state === 'ready'"
+                         class="md-icon-button"
+                         @click="downloadMessageAttachment(attachment)"
+                         :aria-label="'Download attachment ' + attachment.name"
+                         title="Download">
+                <md-icon>download</md-icon>
+              </md-button>
+            </div>
+            <p v-if="attachment.error" role="alert">{{attachment.error}}</p>
+          </section>
+        </div>
         <footer>
           <time :datetime="message.createdAt">{{formatDate(message.createdAt)}}</time>
           <span v-if="message.isOwn">{{message.deliveryLabel}}</span>
@@ -94,14 +131,42 @@ module.exports = `
     </div>
 
     <form class="encrypted-direct-chat-composer" @submit.prevent="sendMessage">
-      <label class="sr-only" for="encrypted-chat-message">Encrypted message</label>
-      <textarea id="encrypted-chat-message" v-model="newMessage"
-                placeholder="Write an encrypted message..."
-                @keydown.enter.exact.prevent="sendMessage"></textarea>
-      <md-button type="submit" class="md-icon-button md-primary"
-                 :disabled="!canSend" aria-label="Send encrypted message" title="Send">
-        <md-icon>send</md-icon>
-      </md-button>
+      <div v-if="pendingAttachments.length" class="encrypted-direct-chat-pending-attachments">
+        <div v-for="attachment in pendingAttachments" :key="attachment.id"
+             class="encrypted-direct-chat-pending-attachment">
+          <md-icon>insert_drive_file</md-icon>
+          <div>
+            <strong>{{attachment.file.name}}</strong>
+            <span>{{formatAttachmentSize(attachment.file.size)}} · {{getPendingAttachmentStatus(attachment)}}</span>
+          </div>
+          <md-button type="button" class="md-icon-button"
+                     @click="removePendingAttachment(attachment.id)"
+                     :disabled="sending"
+                     :aria-label="'Remove attachment ' + attachment.file.name"
+                     title="Remove attachment">
+            <md-icon>close</md-icon>
+          </md-button>
+        </div>
+      </div>
+      <div class="encrypted-direct-chat-composer-row">
+        <input ref="attachmentInput" class="sr-only" type="file" multiple
+               aria-label="Choose encrypted attachments"
+               @change="selectAttachments">
+        <md-button type="button" class="md-icon-button"
+                   @click="$refs.attachmentInput.click()"
+                   :disabled="sending"
+                   aria-label="Attach encrypted files" title="Attach files">
+          <md-icon>attach_file</md-icon>
+        </md-button>
+        <label class="sr-only" for="encrypted-chat-message">Encrypted message</label>
+        <textarea id="encrypted-chat-message" v-model="newMessage"
+                  placeholder="Write an encrypted message..."
+                  @keydown.enter.exact.prevent="sendMessage"></textarea>
+        <md-button type="submit" class="md-icon-button md-primary"
+                   :disabled="!canSend" aria-label="Send encrypted message" title="Send">
+          <md-icon>send</md-icon>
+        </md-button>
+      </div>
     </form>
   </template>
 </section>
