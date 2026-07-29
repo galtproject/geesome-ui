@@ -39,7 +39,7 @@ module.exports = `
       <md-icon>{{currentRevoked ? 'block' : (currentRegistered ? 'verified_user' : 'warning')}}</md-icon>
       <div>
         <h3>{{currentRevoked ? 'This device was revoked' : (currentRegistered ? 'This browser is ready' : 'Registration needed')}}</h3>
-        <p>Fingerprint {{shortKeyId(localDevice.keyId)}}</p>
+        <p>Fingerprint {{fingerprintValue(localDevice)}}</p>
       </div>
     </div>
     <div class="chat-device-security-actions">
@@ -84,7 +84,7 @@ module.exports = `
       <div v-for="device in activeDevices" :key="device.keyId" class="chat-device-security-device">
         <div>
           <strong>{{isCurrentDevice(device) ? 'This browser' : 'Other browser'}}</strong>
-          <span>{{shortKeyId(device.keyId)}}</span>
+          <span>{{fingerprintValue(device)}}</span>
           <small>{{device.deviceId}}</small>
         </div>
         <md-button class="md-icon-button" @click="revokeDevice(device)" :disabled="busy" :aria-label="'Revoke chat device ' + shortKeyId(device.keyId)" title="Revoke device">

@@ -59,7 +59,10 @@ test('browser chat device can be created, backed up, restored, and revoked', asy
   const recoveryPath = await download.path();
 
   await expect(page.getByRole('heading', {name: 'This browser is ready'})).toBeVisible();
-  await expect(page.getByText(/^Fingerprint /)).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.locator('.chat-device-security-status p')).toHaveText(
+    /^Fingerprint (?:[0-9A-F]{4} ){15}[0-9A-F]{4}$/
+  );
   await saveShot(page, 'chat-security-ready-mobile.png');
 
   const registerCalls = await calls(page, 'registerChatDevice');

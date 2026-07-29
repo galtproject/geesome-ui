@@ -8,10 +8,17 @@ module.exports = `
         End-to-end encrypted on this browser
       </p>
     </div>
-    <md-button class="md-icon-button" @click="refresh" :disabled="loading"
-               aria-label="Refresh encrypted messages" title="Refresh">
-      <md-icon>refresh</md-icon>
-    </md-button>
+    <div class="encrypted-direct-chat-header-actions">
+      <md-button v-if="recipientReady" class="md-icon-button"
+                 @click="showDeviceVerification = !showDeviceVerification"
+                 aria-label="Review verified chat devices" title="Review verified devices">
+        <md-icon>verified_user</md-icon>
+      </md-button>
+      <md-button class="md-icon-button" @click="refresh" :disabled="loading"
+                 aria-label="Refresh encrypted messages" title="Refresh">
+        <md-icon>refresh</md-icon>
+      </md-button>
+    </div>
   </header>
 
   <md-progress-bar v-if="loading" md-mode="indeterminate"></md-progress-bar>
@@ -37,7 +44,38 @@ module.exports = `
     </md-button>
   </div>
 
-  <template v-else-if="localDevice && recipientReady">
+  <section v-else-if="localDevice && recipientReady && (!recipientVerified || showDeviceVerification)"
+           class="encrypted-direct-chat-verification"
+           aria-labelledby="encrypted-chat-verification-title">
+    <header>
+      <md-icon>verified_user</md-icon>
+      <div>
+        <h3 id="encrypted-chat-verification-title">{{recipientVerified ? 'Verified devices for ' : 'Verify '}}{{recipientName || 'contact'}}{{recipientVerified ? '' : "'s devices"}}</h3>
+        <p v-if="recipientVerified">These decisions are stored only in this browser. Remove verification if a device is no longer trusted.</p>
+        <p v-else>Compare each fingerprint with your contact using another trusted channel. Messages stay hidden until every active device is verified.</p>
+      </div>
+    </header>
+    <div class="encrypted-direct-chat-device-list">
+      <div v-for="device in recipientDeviceFingerprints"
+           :key="device.keyId"
+           class="encrypted-direct-chat-device">
+        <div>
+          <strong>{{device.deviceId}}</strong>
+          <code>{{device.value}}</code>
+        </div>
+        <md-button class="md-raised"
+                   :class="{'md-accent': !device.trusted}"
+                   @click="setDeviceTrusted(device, !device.trusted)"
+          :disabled="!!verifyingDeviceKeyId"
+                   :aria-label="(device.trusted ? 'Remove verification for device ' : 'Mark device verified ') + device.deviceId">
+          <md-icon>{{device.trusted ? 'verified_user' : 'how_to_reg'}}</md-icon>
+          {{device.trusted ? 'Remove verification' : 'Mark verified'}}
+        </md-button>
+      </div>
+    </div>
+  </section>
+
+  <template v-else-if="localDevice && recipientReady && recipientVerified">
     <div class="encrypted-direct-chat-messages" role="log" aria-live="polite">
       <div v-if="!messages.length && !loading" class="encrypted-direct-chat-empty is-compact">
         <md-icon>forum</md-icon>

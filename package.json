@@ -33,7 +33,7 @@
     "file-saver": "^2.0.2",
     "font-awesome": "https://github.com/FortAwesome/Font-Awesome",
     "geesome-libs": "https://github.com/galtproject/geesome-libs#bd48910",
-    "geesome-libs-e2ee": "https://github.com/galtproject/geesome-libs#983885c",
+    "geesome-libs-e2ee": "https://github.com/galtproject/geesome-libs#054ac08",
     "ipfs-http-client": "52.0.3",
     "geesome-vue-components": "https://github.com/galtproject/geesome-vue-components#588a58c",
     "is-ipfs": "^0.4.7",
