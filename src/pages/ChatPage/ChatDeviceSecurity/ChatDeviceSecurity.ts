@@ -23,6 +23,7 @@ export default {
         this.localDevice = await chatDeviceStore.getCurrent(this.ownerId);
         const response = await this.$geesome.getOwnChatDevices({includeRevoked: true});
         this.devices = response.list || [];
+        await this.refreshFingerprints();
       } catch (error) {
         this.error = getErrorMessage(error, 'Chat device status is unavailable.');
       } finally {
@@ -183,6 +184,22 @@ export default {
     isCurrentDevice(device) {
       return !!this.localDevice && this.localDevice.keyId === device.keyId;
     },
+    async refreshFingerprints() {
+      const bundles = [
+        this.localDevice && this.localDevice.publicBundle,
+        ...this.devices.map(getPublicBundle)
+      ].filter(bundle => !!bundle);
+      const fingerprints = await Promise.all(
+        bundles.map(bundle => browserE2eeHelper.getDeviceFingerprint(bundle))
+      );
+      this.deviceFingerprints = fingerprints.reduce((result, fingerprint) => ({
+        ...result,
+        [fingerprint.keyId]: fingerprint.value
+      }), {});
+    },
+    fingerprintValue(device) {
+      return this.deviceFingerprints[device && device.keyId] || shortKeyId(device && device.keyId);
+    },
     shortKeyId,
     clearPassphrases() {
       this.recoveryPassphrase = '';
@@ -234,7 +251,8 @@ export default {
       recoveryPassphraseConfirmation: '',
       pendingRecoveryBundle: null,
       restoreFilename: '',
-      restorePassphrase: ''
+      restorePassphrase: '',
+      deviceFingerprints: {}
     };
   }
 };
@@ -249,6 +267,25 @@ function shortKeyId(value) {
     return 'unknown';
   }
   return value.length > 18 ? `${value.slice(0, 9)}...${value.slice(-6)}` : value;
+}
+
+function getPublicBundle(device) {
+  if (!device) {
+    return null;
+  }
+  if (device.publicBundle) {
+    return device.publicBundle;
+  }
+  return {
+    version: device.version,
+    ownerId: device.ownerId,
+    deviceId: device.deviceId,
+    createdAt: device.createdAt,
+    keyId: device.keyId,
+    encryption: device.encryption,
+    signing: device.signing,
+    proof: device.proof
+  };
 }
 
 function readFileText(file) {

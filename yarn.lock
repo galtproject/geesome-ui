@@ -9968,9 +9968,9 @@ gc-stats@^1.4.0:
     nan "^2.13.2"
     node-pre-gyp "^0.13.0"
 
-"geesome-libs-e2ee@https://github.com/galtproject/geesome-libs#983885c":
+"geesome-libs-e2ee@https://github.com/galtproject/geesome-libs#054ac08":
   version "1.0.0"
-  resolved "https://github.com/galtproject/geesome-libs#983885cf6e8849ef3f8d239181f23823fb966752"
+  resolved "https://github.com/galtproject/geesome-libs#054ac08ea2c685ab53d0d1249b39e9aa5ffe2257"
   dependencies:
     "@ethersproject/hash" "^5.7.0"
     "@helia/dag-cbor" "^5.1.1"

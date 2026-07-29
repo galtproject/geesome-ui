@@ -1,5 +1,6 @@
 import browserE2eeHelper from 'geesome-libs-e2ee/src/browserE2eeHelper';
 import chatDeviceStore from '../../../services/chatDeviceStore';
+import chatDeviceTrustStore from '../../../services/chatDeviceTrustStore';
 import {
   getActiveChatDeviceBundles,
   getChatRecipientEndpoint,
@@ -68,6 +69,7 @@ export default {
         this.recipientDeviceBundles = getActiveChatDeviceBundles(
           recipientDevicesResponse.list
         );
+        await this.loadRecipientDeviceTrust();
         if (!this.currentDeviceRegistered) {
           throw new Error('current_chat_device_not_registered');
         }
@@ -75,7 +77,9 @@ export default {
           throw new Error('recipient_chat_devices_unavailable');
         }
         this.recipientUnavailableReason = '';
-        await this.readMessages();
+        if (this.recipientVerified) {
+          await this.readMessages();
+        }
       } catch (error) {
         this.handleAvailabilityError(error);
       } finally {
@@ -204,6 +208,47 @@ export default {
         this.sending = false;
       }
     },
+    async loadRecipientDeviceTrust() {
+      const [fingerprints, trustedDevices] = await Promise.all([
+        Promise.all(this.recipientDeviceBundles.map(bundle =>
+          browserE2eeHelper.getDeviceFingerprint(bundle)
+        )),
+        chatDeviceTrustStore.list(this.recipientOwnerId)
+      ]);
+      const trustedByKeyId = new Map(
+        trustedDevices.map(device => [device.keyId, device])
+      );
+      this.recipientDeviceFingerprints = fingerprints.map(fingerprint => ({
+        ...fingerprint,
+        trusted: isMatchingTrustedDevice(
+          trustedByKeyId.get(fingerprint.keyId),
+          fingerprint
+        )
+      }));
+    },
+    async setDeviceTrusted(fingerprint, trusted) {
+      if (!fingerprint || this.verifyingDeviceKeyId) {
+        return;
+      }
+      this.verifyingDeviceKeyId = fingerprint.keyId;
+      this.error = '';
+      try {
+        if (trusted) {
+          await chatDeviceTrustStore.save(fingerprint);
+        } else {
+          await chatDeviceTrustStore.remove(fingerprint.keyId);
+        }
+        await this.loadRecipientDeviceTrust();
+        if (this.recipientVerified) {
+          this.showDeviceVerification = false;
+          await this.readMessages();
+        }
+      } catch (error) {
+        this.error = getErrorMessage(error, 'The device verification could not be saved.');
+      } finally {
+        this.verifyingDeviceKeyId = '';
+      }
+    },
     async getDeliveryLabel(messageId) {
       try {
         const response = await this.$geesome.getEncryptedChatEventDeliveries(messageId);
@@ -253,6 +298,10 @@ export default {
         this.currentDeviceRegistered &&
         this.recipientDeviceBundles.length > 0;
     },
+    recipientVerified() {
+      return this.recipientDeviceFingerprints.length > 0 &&
+        this.recipientDeviceFingerprints.every(device => device.trusted);
+    },
     recipientName() {
       return this.recipient?.title || this.recipient?.name || '';
     },
@@ -266,7 +315,10 @@ export default {
       return 'Your contact needs to update their profile from a GeeSome node with a public chat address.';
     },
     canSend() {
-      return !this.sending && this.recipientReady && !!this.newMessage.trim();
+      return !this.sending &&
+        this.recipientReady &&
+        this.recipientVerified &&
+        !!this.newMessage.trim();
     }
   },
   data() {
@@ -281,6 +333,9 @@ export default {
       recipientUnavailableReason: '',
       ownDeviceBundles: [],
       recipientDeviceBundles: [],
+      recipientDeviceFingerprints: [],
+      verifyingDeviceKeyId: '',
+      showDeviceVerification: false,
       messages: [],
       messageIds: new Set(),
       lastFetchedSequence: '0',
@@ -304,4 +359,13 @@ function compareSequences(left, right) {
     return 0;
   }
   return leftValue < rightValue ? -1 : 1;
+}
+
+function isMatchingTrustedDevice(trustedDevice, fingerprint) {
+  return !!trustedDevice &&
+    trustedDevice.ownerId === fingerprint.ownerId &&
+    trustedDevice.deviceId === fingerprint.deviceId &&
+    trustedDevice.version === fingerprint.version &&
+    trustedDevice.algorithm === fingerprint.algorithm &&
+    trustedDevice.value === fingerprint.value;
 }

@@ -15,6 +15,7 @@ import UploadContent from '../../src/directives/UploadContent/UploadContent';
 import AddSocNetClientModal from '../../src/pages/UsersSection/modals/AddSocNetClientModal/AddSocNetClientModal';
 import ChatDeviceSecurity from '../../src/pages/ChatPage/ChatDeviceSecurity/ChatDeviceSecurity';
 import EncryptedDirectChat from '../../src/pages/ChatPage/EncryptedDirectChat/EncryptedDirectChat';
+import chatDeviceTrustStore from '../../src/services/chatDeviceTrustStore';
 import browserE2eeHelper from 'geesome-libs-e2ee/src/browserE2eeHelper';
 import chatDeviceStore from '../../src/services/chatDeviceStore';
 import {getDirectConversationId} from '../../src/services/encryptedChat';
@@ -1515,6 +1516,7 @@ function getCurrentPage() {
 
 async function setupEncryptedChatFixture() {
   await chatDeviceStore.clearOwner(encryptedChatOwnerId);
+  await chatDeviceTrustStore.clearOwner(encryptedChatRecipientOwnerId);
   const localDevice = await browserE2eeHelper.generateDeviceKeys({
     ownerId: encryptedChatOwnerId,
     deviceId: 'browser-local',
