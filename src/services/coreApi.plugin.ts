@@ -168,6 +168,20 @@ export default {
         ).catch(this.onError);
       },
 
+      getOwnChatDevices(options: any = {}) {
+        return geesomeClient.getRequest('chat/devices', {params: options}).catch(this.onError);
+      },
+
+      registerChatDevice(publicBundle) {
+        return geesomeClient.postRequest('chat/devices', {publicBundle}).catch(this.onError);
+      },
+
+      revokeChatDevice(deviceId) {
+        return geesomeClient.postRequest(
+          `chat/devices/${encodeURIComponent(deviceId)}/revoke`
+        ).catch(this.onError);
+      },
+
       adminGetStorageSpaceOverview() {
         return geesomeClient.getRequest('admin/storage-space/overview').catch(this.onError);
       },

@@ -13,12 +13,13 @@ import {EventBus, UPDATE_GROUP} from "../../services/events";
 import MessageItem from "./MessageItem/MessageItem";
 import ContentManifestInfoItem from "../../directives/ContentManifestInfoItem/ContentManifestInfoItem";
 import ChooseFileContentsIdsModal from "../../modals/ChooseFileContentsIdsModal/ChooseFileContentsIdsModal";
+import ChatDeviceSecurity from "./ChatDeviceSecurity/ChatDeviceSecurity";
 const _ = require('lodash');
 
 export default {
   name: 'chat-page',
   template: require('./ChatPage.template'),
-  components: {GroupItem, MessageItem, ContentManifestInfoItem},
+  components: {GroupItem, MessageItem, ContentManifestInfoItem, ChatDeviceSecurity},
   async created() {
     
   },
@@ -30,6 +31,9 @@ export default {
     }
   },
   methods: {
+    toggleSecurity() {
+      this.securityOpen = !this.securityOpen;
+    },
     async getGroups() {
       this.groups = await this.$geesome.getMemberInChats();
 
@@ -152,6 +156,14 @@ export default {
     user() {
       return this.$store.state.user;
     },
+    chatOwnerId() {
+      if (!this.user) {
+        return '';
+      }
+      return this.user.storageAccountId ||
+        this.user.manifestStaticStorageId ||
+        '';
+    },
     usersInfo() {
       return this.$store.state.usersInfo;
     },
@@ -166,6 +178,7 @@ export default {
       groups: [],
       messages: [],
       messagesLoading: false,
+      securityOpen: false,
       messagesPagination: {
         currentPage: 1,
         perPage: 20
