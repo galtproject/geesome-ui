@@ -13,11 +13,16 @@ export function createPendingChatAttachment(file) {
     id: createLocalAttachmentId(),
     file,
     state: 'selected',
-    reference: null
+    reference: null,
+    reservationId: ''
   };
 }
 
-export async function encryptAndUploadChatAttachment(file, saveFile, onUploadStart) {
+export async function encryptAndUploadChatAttachment(
+  file,
+  services,
+  onStateChange
+) {
   const encrypted = await browserE2eeHelper.encryptAttachment(
     await file.arrayBuffer(),
     {
@@ -30,18 +35,33 @@ export async function encryptAndUploadChatAttachment(file, saveFile, onUploadSta
     `encrypted-chat-${createLocalAttachmentId()}.bin`,
     {type: 'application/octet-stream'}
   );
-  if (onUploadStart) {
-    onUploadStart();
+  let reservationId = '';
+  try {
+    onStateChange?.('reserving');
+    const reservation = await services.createReservation(uploadFile.size);
+    reservationId = reservation?.reservationId;
+    if (!reservationId) {
+      throw new Error('attachment_upload_reservation_missing');
+    }
+    onStateChange?.('uploading');
+    const uploaded = await services.saveFile(uploadFile, {
+      chatAttachmentReservationId: reservationId
+    });
+    if (!uploaded?.storageId) {
+      throw new Error('attachment_upload_storage_id_missing');
+    }
+    return {
+      reference: browserE2eeHelper.createAttachmentReference(
+        uploaded.storageId,
+        encrypted.attachment,
+        encrypted.key
+      ),
+      reservationId
+    };
+  } catch (error) {
+    await cancelReservationAfterFailedUpload(services, reservationId);
+    throw error;
   }
-  const uploaded = await saveFile(uploadFile);
-  if (!uploaded?.storageId) {
-    throw new Error('attachment_upload_storage_id_missing');
-  }
-  return browserE2eeHelper.createAttachmentReference(
-    uploaded.storageId,
-    encrypted.attachment,
-    encrypted.key
-  );
 }
 
 export async function decryptChatAttachment(reference, getContentLink) {
@@ -89,4 +109,15 @@ export function formatAttachmentSize(value) {
 function createLocalAttachmentId() {
   const bytes = crypto.getRandomValues(new Uint8Array(9));
   return browserE2eeHelper.encodeBase64Url(bytes);
+}
+
+async function cancelReservationAfterFailedUpload(services, reservationId) {
+  if (!reservationId) {
+    return;
+  }
+  try {
+    await services.cancelReservation(reservationId);
+  } catch (_error) {
+    // The server-side expiry remains the cleanup boundary when cancellation fails.
+  }
 }

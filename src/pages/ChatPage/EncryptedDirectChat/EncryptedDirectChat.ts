@@ -252,9 +252,13 @@ export default {
       if (this.sending) {
         return;
       }
-      this.pendingAttachments = this.pendingAttachments.filter(
-        attachment => attachment.id !== attachmentId
+      const attachment = this.pendingAttachments.find(
+        item => item.id === attachmentId
       );
+      this.pendingAttachments = this.pendingAttachments.filter(
+        item => item.id !== attachmentId
+      );
+      this.cancelPendingAttachmentReservation(attachment);
     },
     async preparePendingAttachments() {
       const references = [];
@@ -265,13 +269,19 @@ export default {
         }
         try {
           this.setPendingAttachmentState(pending.id, 'encrypting');
-          const reference = await encryptAndUploadChatAttachment(
+          const upload = await encryptAndUploadChatAttachment(
             pending.file,
-            file => this.$geesome.saveFile(file),
-            () => this.setPendingAttachmentState(pending.id, 'uploading')
+            {
+              createReservation: expectedBytes =>
+                this.$geesome.createChatAttachmentUploadReservation(expectedBytes),
+              saveFile: (file, params) => this.$geesome.saveFile(file, params),
+              cancelReservation: reservationId =>
+                this.$geesome.cancelChatAttachmentUploadReservation(reservationId)
+            },
+            state => this.setPendingAttachmentState(pending.id, state)
           );
-          this.setPendingAttachmentState(pending.id, 'ready', reference);
-          references.push(reference);
+          this.setPendingAttachmentState(pending.id, 'ready', upload);
+          references.push(upload.reference);
         } catch (error) {
           this.setPendingAttachmentState(pending.id, 'failed');
           throw error;
@@ -279,12 +289,29 @@ export default {
       }
       return references;
     },
-    setPendingAttachmentState(attachmentId, state, reference = null) {
+    setPendingAttachmentState(attachmentId, state, upload = null) {
       this.pendingAttachments = this.pendingAttachments.map(attachment =>
         attachment.id === attachmentId
-          ? {...attachment, state, reference: reference || attachment.reference}
+          ? {
+            ...attachment,
+            state,
+            reference: upload?.reference || attachment.reference,
+            reservationId: upload?.reservationId || attachment.reservationId
+          }
           : attachment
       );
+    },
+    async cancelPendingAttachmentReservation(attachment) {
+      if (!attachment?.reservationId) {
+        return;
+      }
+      try {
+        await this.$geesome.cancelChatAttachmentUploadReservation(
+          attachment.reservationId
+        );
+      } catch (_error) {
+        // Expiry handles reservations that cannot be cancelled while offline.
+      }
     },
     async decryptMessageContent(envelope, senderBundle) {
       if (envelope.encoding !== 'json') {
@@ -353,6 +380,9 @@ export default {
     getPendingAttachmentStatus(attachment) {
       if (attachment.state === 'encrypting') {
         return 'Encrypting';
+      }
+      if (attachment.state === 'reserving') {
+        return 'Reserving encrypted upload';
       }
       if (attachment.state === 'uploading') {
         return 'Uploading ciphertext';

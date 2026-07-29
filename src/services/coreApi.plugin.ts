@@ -184,6 +184,18 @@ export default {
         ).catch(this.onError);
       },
 
+      createChatAttachmentUploadReservation(expectedBytes) {
+        return geesomeClient.postRequest('chat/attachments/reservations', {
+          expectedBytes
+        }).catch(this.onError);
+      },
+
+      cancelChatAttachmentUploadReservation(reservationId) {
+        return geesomeClient.postRequest(
+          `chat/attachments/reservations/${encodeURIComponent(reservationId)}/cancel`
+        ).catch(this.onError);
+      },
+
       getRemoteChatDevices(ownerId, chatTransport) {
         return axios.get(
           getChatDeviceDiscoveryUrl(chatTransport, ownerId),
