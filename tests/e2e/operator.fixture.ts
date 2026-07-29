@@ -617,6 +617,8 @@ let blueskyReviewItems = [
 let chatDevices: any[] = [];
 let encryptedChatRemoteDevice: any = null;
 let encryptedChatEvents: any[] = [];
+const encryptedChatAttachmentData = new Map<string, Uint8Array>();
+let encryptedChatAttachmentSequence = 0;
 const encryptedChatOwnerId = 'owner-e2e';
 const encryptedChatRecipientOwnerId = 'owner-remote';
 const encryptedChatConversationId = getDirectConversationId([
@@ -938,6 +940,12 @@ Vue.prototype.$geesome = {
   },
   async getContentLink(storageId) {
     calls.push({type: 'getContentLink', storageId});
+    const encryptedData = encryptedChatAttachmentData.get(storageId);
+    if (encryptedData) {
+      return URL.createObjectURL(new Blob([encryptedData], {
+        type: 'application/octet-stream'
+      }));
+    }
     return `/ipfs/${storageId}`;
   },
   async getContentData(storageId) {
@@ -948,7 +956,21 @@ Vue.prototype.$geesome = {
     return '';
   },
   async saveFile(file, params) {
-    calls.push({type: 'saveFile', fileName: file.name, params});
+    const fileData = new Uint8Array(await file.arrayBuffer());
+    calls.push({
+      type: 'saveFile',
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      fileText: new TextDecoder().decode(fileData),
+      params
+    });
+    if (file.name.startsWith('encrypted-chat-')) {
+      encryptedChatAttachmentSequence += 1;
+      const storageId = `bafy-encrypted-chat-${encryptedChatAttachmentSequence}`;
+      encryptedChatAttachmentData.set(storageId, fileData);
+      return {id: 700 + encryptedChatAttachmentSequence, storageId};
+    }
     return {id: 77, storageId: 'bafy-pin-services-upload'};
   },
   async pinContentByUserAccount(accountName, storageId, options) {
@@ -1533,14 +1555,36 @@ async function setupEncryptedChatFixture() {
     publicBundle: localDevice.publicBundle,
     revokedAt: null
   }];
-  const envelope = await browserE2eeHelper.encryptEnvelope(
+  const imageBytes = decodeBase64(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+  );
+  const encryptedAttachment = await browserE2eeHelper.encryptAttachment(imageBytes, {
+    name: 'encrypted-pixel.png',
+    mimeType: 'image/png'
+  });
+  const attachmentStorageId = 'bafy-encrypted-chat-incoming';
+  encryptedChatAttachmentData.set(
+    attachmentStorageId,
+    browserE2eeHelper.getAttachmentUploadData(encryptedAttachment.attachment)
+  );
+  const attachmentReference = browserE2eeHelper.createAttachmentReference(
+    attachmentStorageId,
+    encryptedAttachment.attachment,
+    encryptedAttachment.key
+  );
+  const payload = browserE2eeHelper.createChatMessagePayload(
     'Encrypted hello from Bob',
+    [attachmentReference]
+  );
+  const envelope = await browserE2eeHelper.encryptEnvelope(
+    payload,
     [localDevice.publicBundle],
     encryptedChatRemoteDevice,
     {
       conversationId: encryptedChatConversationId,
       messageId: 'encrypted-message-incoming',
-      createdAt: '2026-07-29T08:05:00.000Z'
+      createdAt: '2026-07-29T08:05:00.000Z',
+      metadata: browserE2eeHelper.createChatMessageEnvelopeMetadata(payload)
     }
   );
   encryptedChatEvents = [{
@@ -1552,6 +1596,10 @@ async function setupEncryptedChatFixture() {
     envelope,
     acceptedAt: '2026-07-29T08:05:01.000Z'
   }];
+}
+
+function decodeBase64(value) {
+  return Uint8Array.from(atob(value), character => character.charCodeAt(0));
 }
 
 function prettySize(value) {

@@ -44,6 +44,11 @@ test('direct messages are encrypted and decrypted only in the browser', async ({
 
   await page.getByRole('button', {name: 'Mark device verified browser-remote'}).click();
   await expect(page.getByText('Encrypted hello from Bob')).toBeVisible();
+  await expect(page.getByText('encrypted-pixel.png')).toBeVisible();
+  await expect(page.getByRole('img', {name: 'encrypted-pixel.png'})).toHaveCount(0);
+  await page.getByRole('button', {name: 'Decrypt attachment encrypted-pixel.png'}).click();
+  await expect(page.getByRole('img', {name: 'encrypted-pixel.png'})).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Download attachment encrypted-pixel.png'})).toBeVisible();
   await saveShot(page, 'encrypted-direct-chat-incoming-mobile.png');
 
   const trustedDevice = await page.evaluate(() => new Promise((resolve, reject) => {
@@ -82,6 +87,13 @@ test('direct messages are encrypted and decrypted only in the browser', async ({
   await expect(page.getByText('Encrypted hello from Bob')).toBeVisible();
 
   const plaintext = 'Private reply from Alice';
+  const attachmentPlaintext = 'Private attachment from Alice';
+  await page.getByLabel('Choose encrypted attachments').setInputFiles({
+    name: 'private-note.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from(attachmentPlaintext)
+  });
+  await expect(page.getByText('private-note.txt')).toBeVisible();
   await page.getByRole('textbox', {name: 'Encrypted message', exact: true}).fill(plaintext);
   await page.getByRole('button', {name: 'Send encrypted message'}).click();
 
@@ -91,6 +103,10 @@ test('direct messages are encrypted and decrypted only in the browser', async ({
   const sendCalls = await chatCalls(page, 'createEncryptedChatEvent');
   expect(sendCalls).toHaveLength(1);
   expect(JSON.stringify(sendCalls[0].envelope)).not.toContain(plaintext);
+  expect(JSON.stringify(sendCalls[0].envelope)).not.toContain(attachmentPlaintext);
+  expect(JSON.stringify(sendCalls[0].envelope)).not.toContain('private-note.txt');
+  expect(sendCalls[0].envelope.metadata.kind).toBe('json');
+  expect(sendCalls[0].envelope.metadata.attachmentStorageIds).toHaveLength(1);
   expect(sendCalls[0].envelope.recipientKeyIds).toHaveLength(2);
   expect(sendCalls[0].recipientEndpoints).toEqual([{
     ownerId: 'owner-remote',
@@ -98,6 +114,28 @@ test('direct messages are encrypted and decrypted only in the browser', async ({
     inboxUrl: 'https://remote.example/v1/chat/inbox'
   }]);
   expect(sendCalls[0].envelope.conversationId).toMatch(/^\/geesome\/group\/[a-f0-9]{64}$/);
+
+  const uploadCalls = await chatCalls(page, 'saveFile');
+  const encryptedUpload = uploadCalls.find(call =>
+    call.fileName.startsWith('encrypted-chat-')
+  );
+  expect(encryptedUpload).toBeTruthy();
+  expect(encryptedUpload.fileName).not.toBe('private-note.txt');
+  expect(encryptedUpload.fileType).toBe('application/octet-stream');
+  expect(encryptedUpload.fileText).not.toContain(attachmentPlaintext);
+  await expect(page.getByText('private-note.txt')).toBeVisible();
+  await page.getByRole('button', {name: 'Decrypt attachment private-note.txt'}).click();
+  await expect(page.getByRole('button', {name: 'Download attachment private-note.txt'})).toBeVisible();
+
+  const compatibleText = 'Compatible encrypted text';
+  await page.getByRole('textbox', {name: 'Encrypted message', exact: true}).fill(compatibleText);
+  await page.getByRole('button', {name: 'Send encrypted message'}).click();
+  await expect(page.getByText(compatibleText)).toBeVisible();
+  const allSendCalls = await chatCalls(page, 'createEncryptedChatEvent');
+  expect(allSendCalls).toHaveLength(2);
+  expect(allSendCalls[1].envelope.encoding).toBe('utf8');
+  expect(allSendCalls[1].envelope.metadata).toEqual({});
+  expect(JSON.stringify(allSendCalls[1].envelope)).not.toContain(compatibleText);
 
   const receiptCalls = await chatCalls(page, 'setEncryptedChatReceipt');
   expect(receiptCalls.some(call =>
