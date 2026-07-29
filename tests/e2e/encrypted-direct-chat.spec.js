@@ -119,10 +119,20 @@ test('direct messages are encrypted and decrypted only in the browser', async ({
   const encryptedUpload = uploadCalls.find(call =>
     call.fileName.startsWith('encrypted-chat-')
   );
+  const reservationCalls = await chatCalls(
+    page,
+    'createChatAttachmentUploadReservation'
+  );
+  expect(reservationCalls).toHaveLength(1);
   expect(encryptedUpload).toBeTruthy();
   expect(encryptedUpload.fileName).not.toBe('private-note.txt');
   expect(encryptedUpload.fileType).toBe('application/octet-stream');
   expect(encryptedUpload.fileText).not.toContain(attachmentPlaintext);
+  expect(reservationCalls[0].expectedBytes).toBe(encryptedUpload.fileSize);
+  expect(encryptedUpload.params.chatAttachmentReservationId).toBe(
+    reservationCalls[0].reservation.reservationId
+  );
+  expect(await chatCalls(page, 'cancelChatAttachmentUploadReservation')).toHaveLength(0);
   await expect(page.getByText('private-note.txt')).toBeVisible();
   await page.getByRole('button', {name: 'Decrypt attachment private-note.txt'}).click();
   await expect(page.getByRole('button', {name: 'Download attachment private-note.txt'})).toBeVisible();
@@ -145,4 +155,50 @@ test('direct messages are encrypted and decrypted only in the browser', async ({
   await saveShot(page, 'encrypted-direct-chat-sent-mobile.png');
   await page.setViewportSize(DESKTOP_VIEWPORT);
   await saveShot(page, 'encrypted-direct-chat-sent-desktop.png');
+
+  await page.setViewportSize(MOBILE_VIEWPORT);
+  await page.getByLabel('Choose encrypted attachments').setInputFiles({
+    name: 'retry-note.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('Reuse this encrypted upload after event rejection')
+  });
+  await page.getByRole('textbox', {name: 'Encrypted message', exact: true})
+    .fill('Retry without re-uploading ciphertext');
+  await page.evaluate(() => window.__ENCRYPTED_CHAT_E2E__.failNextEvent());
+  await page.getByRole('button', {name: 'Send encrypted message'}).click();
+  await expect(page.getByText('encrypted_chat_event_rejected_for_test')).toBeVisible();
+  const uploadsBeforeRetry = await chatCalls(page, 'saveFile');
+  const reservationsBeforeRetry = await chatCalls(
+    page,
+    'createChatAttachmentUploadReservation'
+  );
+  await page.getByRole('button', {name: 'Send encrypted message'}).click();
+  await expect(page.getByText('Retry without re-uploading ciphertext')).toBeVisible();
+  expect(await chatCalls(page, 'saveFile')).toHaveLength(uploadsBeforeRetry.length);
+  expect(await chatCalls(page, 'createChatAttachmentUploadReservation')).toHaveLength(
+    reservationsBeforeRetry.length
+  );
+
+  await page.getByLabel('Choose encrypted attachments').setInputFiles({
+    name: 'discarded-note.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('Discard this encrypted attachment')
+  });
+  await page.getByRole('textbox', {name: 'Encrypted message', exact: true})
+    .fill('Message rejected before local acceptance');
+  await page.evaluate(() => window.__ENCRYPTED_CHAT_E2E__.failNextEvent());
+  await page.getByRole('button', {name: 'Send encrypted message'}).click();
+  await expect(page.getByText('encrypted_chat_event_rejected_for_test')).toBeVisible();
+  await page.getByRole('button', {name: 'Remove attachment discarded-note.txt'}).click();
+
+  const cancelledUploads = await chatCalls(
+    page,
+    'cancelChatAttachmentUploadReservation'
+  );
+  expect(cancelledUploads).toHaveLength(1);
+  const discardedUpload = (await chatCalls(page, 'saveFile')).find(call =>
+    call.fileName.startsWith('encrypted-chat-') &&
+    call.params.chatAttachmentReservationId === cancelledUploads[0].reservationId
+  );
+  expect(discardedUpload).toBeTruthy();
 });

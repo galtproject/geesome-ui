@@ -619,6 +619,8 @@ let encryptedChatRemoteDevice: any = null;
 let encryptedChatEvents: any[] = [];
 const encryptedChatAttachmentData = new Map<string, Uint8Array>();
 let encryptedChatAttachmentSequence = 0;
+let encryptedChatAttachmentReservationSequence = 0;
+let failNextEncryptedChatEvent = false;
 const encryptedChatOwnerId = 'owner-e2e';
 const encryptedChatRecipientOwnerId = 'owner-remote';
 const encryptedChatConversationId = getDirectConversationId([
@@ -712,8 +714,31 @@ Vue.prototype.$geesome = {
     calls.push({type: 'getRemoteChatDevices', ownerId, chatTransport});
     return {list: encryptedChatRemoteDevice ? [encryptedChatRemoteDevice.publicBundle] : []};
   },
+  async createChatAttachmentUploadReservation(expectedBytes) {
+    encryptedChatAttachmentReservationSequence += 1;
+    const reservation = {
+      reservationId: `chat-attachment-reservation-${encryptedChatAttachmentReservationSequence}`,
+      expectedBytes,
+      state: 'reserved',
+      expiresAt: '2026-07-29T14:00:00.000Z'
+    };
+    calls.push({
+      type: 'createChatAttachmentUploadReservation',
+      expectedBytes,
+      reservation
+    });
+    return reservation;
+  },
+  async cancelChatAttachmentUploadReservation(reservationId) {
+    calls.push({type: 'cancelChatAttachmentUploadReservation', reservationId});
+    return {reservationId, state: 'cancelled'};
+  },
   async createEncryptedChatEvent(envelope, recipientEndpoints) {
     calls.push({type: 'createEncryptedChatEvent', envelope, recipientEndpoints});
+    if (failNextEncryptedChatEvent) {
+      failNextEncryptedChatEvent = false;
+      throw new Error('encrypted_chat_event_rejected_for_test');
+    }
     const event = {
       messageId: envelope.messageId,
       conversationId: envelope.conversationId,
@@ -1419,7 +1444,10 @@ Vue.prototype.$geesome = {
 (window as any).__CHAT_SECURITY_E2E__ = {calls, get devices() { return chatDevices; }};
 (window as any).__ENCRYPTED_CHAT_E2E__ = {
   calls,
-  get events() { return encryptedChatEvents; }
+  get events() { return encryptedChatEvents; },
+  failNextEvent() {
+    failNextEncryptedChatEvent = true;
+  }
 };
 
 new Vue({
