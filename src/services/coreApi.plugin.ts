@@ -12,6 +12,8 @@ const { GeesomeClient, BrowserLocalClientStorage } = require('geesome-libs/src/G
 const commonHelpers = require("geesome-libs/src/common");
 const geesomeWalletClientLib = require('geesome-wallet-client/src/lib');
 const includes = require('lodash/includes');
+const axios = require('axios').default;
+const {getChatDeviceDiscoveryUrl} = require('./encryptedChat');
 
 export default {
   install(Vue, options: any = {}) {
@@ -179,6 +181,40 @@ export default {
       revokeChatDevice(deviceId) {
         return geesomeClient.postRequest(
           `chat/devices/${encodeURIComponent(deviceId)}/revoke`
+        ).catch(this.onError);
+      },
+
+      getRemoteChatDevices(ownerId, chatTransport) {
+        return axios.get(
+          getChatDeviceDiscoveryUrl(chatTransport, ownerId),
+          {timeout: 10000}
+        ).then(response => response.data).catch(this.onError);
+      },
+
+      createEncryptedChatEvent(envelope, recipientEndpoints = []) {
+        return geesomeClient.postRequest('chat/events', {
+          envelope,
+          recipientEndpoints
+        }).catch(this.onError);
+      },
+
+      getEncryptedChatEvents(conversationId, options: any = {}) {
+        return geesomeClient.getRequest(
+          `chat/conversations/${encodeURIComponent(conversationId)}/events`,
+          {params: options}
+        ).catch(this.onError);
+      },
+
+      getEncryptedChatEventDeliveries(messageId) {
+        return geesomeClient.getRequest(
+          `chat/events/${encodeURIComponent(messageId)}/deliveries`
+        ).catch(this.onError);
+      },
+
+      setEncryptedChatReceipt(messageId, state) {
+        return geesomeClient.postRequest(
+          `chat/events/${encodeURIComponent(messageId)}/receipt`,
+          {state}
         ).catch(this.onError);
       },
 

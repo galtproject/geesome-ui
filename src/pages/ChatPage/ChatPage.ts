@@ -14,18 +14,29 @@ import MessageItem from "./MessageItem/MessageItem";
 import ContentManifestInfoItem from "../../directives/ContentManifestInfoItem/ContentManifestInfoItem";
 import ChooseFileContentsIdsModal from "../../modals/ChooseFileContentsIdsModal/ChooseFileContentsIdsModal";
 import ChatDeviceSecurity from "./ChatDeviceSecurity/ChatDeviceSecurity";
+import EncryptedDirectChat from "./EncryptedDirectChat/EncryptedDirectChat";
+import {
+  getDirectConversationId,
+  getOtherChatOwnerId
+} from "../../services/encryptedChat";
 const _ = require('lodash');
 
 export default {
   name: 'chat-page',
   template: require('./ChatPage.template'),
-  components: {GroupItem, MessageItem, ContentManifestInfoItem, ChatDeviceSecurity},
+  components: {
+    GroupItem,
+    MessageItem,
+    ContentManifestInfoItem,
+    ChatDeviceSecurity,
+    EncryptedDirectChat
+  },
   async created() {
     
   },
   async mounted() {
-    this.getGroups();
-    if(this.selectedGroupId) {
+    await this.getGroups();
+    if(this.selectedGroupId && !this.isEncryptedDirectChat) {
       await this.$geesome.exportPrivateKey();
       this.getGroupPosts(0);
     }
@@ -39,7 +50,7 @@ export default {
 
       this.groups.forEach((group) => {
         if (group.type === 'personal_chat') {
-          this.$geesome.subscribeToPersonalChatUpdates(group.members, 'default', (event) => this.fetchGroupUpdate(group, event));
+          return;
         } else {
           this.$geesome.subscribeToGroupUpdates(group.staticId, 'default', (event) => this.fetchGroupUpdate(group, event));
         }
@@ -143,7 +154,9 @@ export default {
   },
   watch: {
     selectedGroupId() {
-       this.getGroupPosts(0);
+      if (!this.isEncryptedDirectChat) {
+        this.getGroupPosts(0);
+      }
     }
   },
   computed: {
@@ -151,7 +164,10 @@ export default {
       return this.$route.params.groupId;
     },
     currentGroup() {
-      return _.find(this.groups, {ipns: this.selectedGroupId});
+      return _.find(this.groups, group =>
+        group.staticId === this.selectedGroupId ||
+        group.$manifestId === this.selectedGroupId
+      );
     },
     user() {
       return this.$store.state.user;
@@ -163,6 +179,25 @@ export default {
       return this.user.storageAccountId ||
         this.user.manifestStaticStorageId ||
         '';
+    },
+    isEncryptedDirectChat() {
+      return !!this.currentGroup && this.currentGroup.type === 'personal_chat';
+    },
+    recipientOwnerId() {
+      if (!this.isEncryptedDirectChat) {
+        return '';
+      }
+      return getOtherChatOwnerId(this.currentGroup.members, this.chatOwnerId);
+    },
+    secureConversationId() {
+      if (!this.isEncryptedDirectChat || !this.recipientOwnerId) {
+        return '';
+      }
+      try {
+        return getDirectConversationId(this.currentGroup.members, this.currentGroup.theme || 'default');
+      } catch (_error) {
+        return '';
+      }
     },
     usersInfo() {
       return this.$store.state.usersInfo;

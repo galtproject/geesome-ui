@@ -26,6 +26,15 @@ module.exports = `
         </chat-device-security>
 
         <template v-else>
+            <encrypted-direct-chat v-if="isEncryptedDirectChat && secureConversationId"
+                                   :key="secureConversationId"
+                                   :owner-id="chatOwnerId"
+                                   :recipient-owner-id="recipientOwnerId"
+                                   :conversation-id="secureConversationId"
+                                   @open-security="securityOpen = true">
+            </encrypted-direct-chat>
+
+            <template v-else>
             <md-progress-bar v-if="messagesLoading" class="md-accent" md-mode="indeterminate"></md-progress-bar>
 
             <div class="welcome" v-if="selectedGroupId === null">
@@ -59,6 +68,7 @@ module.exports = `
                     <content-manifest-info-item :db-id="id" @close="deleteContent(index)" :mini="true"></content-manifest-info-item>
                 </div>
             </div>
+            </template>
         </template>
     </div>
 </div>
