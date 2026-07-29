@@ -51,6 +51,33 @@ test('direct messages are encrypted and decrypted only in the browser', async ({
   await expect(page.getByRole('button', {name: 'Download attachment encrypted-pixel.png'})).toBeVisible();
   await saveShot(page, 'encrypted-direct-chat-incoming-mobile.png');
 
+  page.once('dialog', async dialog => {
+    expect(dialog.message()).toContain('Remove this encrypted attachment');
+    await dialog.accept();
+  });
+  await page.getByRole('button', {
+    name: 'Remove attachment encrypted-pixel.png from this history'
+  }).click();
+  await expect(page.getByText('encrypted-pixel.png')).toHaveCount(0);
+  await expect(page.getByText('Attachment removed from this history')).toBeVisible();
+  const releaseCalls = await chatCalls(
+    page,
+    'releaseEncryptedChatEventAttachment'
+  );
+  expect(releaseCalls).toEqual([{
+    type: 'releaseEncryptedChatEventAttachment',
+    messageId: 'encrypted-message-incoming',
+    storageId: 'bafy-encrypted-chat-incoming'
+  }]);
+  const releasedStorageIds = await page.evaluate(() =>
+    window.__ENCRYPTED_CHAT_E2E__.events[0].releasedAttachmentStorageIds
+  );
+  expect(releasedStorageIds).toEqual(['bafy-encrypted-chat-incoming']);
+  await saveShot(page, 'encrypted-direct-chat-attachment-released-mobile.png');
+  await page.setViewportSize(DESKTOP_VIEWPORT);
+  await saveShot(page, 'encrypted-direct-chat-attachment-released-desktop.png');
+  await page.setViewportSize(MOBILE_VIEWPORT);
+
   const trustedDevice = await page.evaluate(() => new Promise((resolve, reject) => {
     const request = indexedDB.open('geesome-chat-device-trust');
     request.onerror = () => reject(request.error);

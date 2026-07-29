@@ -780,6 +780,26 @@ Vue.prototype.$geesome = {
     calls.push({type: 'setEncryptedChatReceipt', messageId, state});
     return {messageId, state};
   },
+  async releaseEncryptedChatEventAttachment(messageId, storageId) {
+    calls.push({
+      type: 'releaseEncryptedChatEventAttachment',
+      messageId,
+      storageId
+    });
+    const event = encryptedChatEvents.find(item => item.messageId === messageId);
+    if (!event) {
+      throw new Error('encrypted_chat_event_not_found');
+    }
+    event.releasedAttachmentStorageIds = Array.from(new Set([
+      ...(event.releasedAttachmentStorageIds || []),
+      storageId
+    ]));
+    return {
+      messageId,
+      storageId,
+      state: 'released'
+    };
+  },
   async adminIsHaveCorePermission(permissionName) {
     calls.push({type: 'adminIsHaveCorePermission', permissionName});
     return permissionName === 'admin:all' || permissionName === 'admin:read';

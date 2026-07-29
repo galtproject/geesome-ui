@@ -230,6 +230,13 @@ export default {
         ).catch(this.onError);
       },
 
+      releaseEncryptedChatEventAttachment(messageId, storageId) {
+        return geesomeClient.postRequest(
+          `chat/events/${encodeURIComponent(messageId)}/attachments/release`,
+          {storageId}
+        ).catch(this.onError);
+      },
+
       adminGetStorageSpaceOverview() {
         return geesomeClient.getRequest('admin/storage-space/overview').catch(this.onError);
       },
