@@ -14,6 +14,10 @@ import SocialMigrationPage from '../../src/pages/SocialMigrationPage/SocialMigra
 import UploadContent from '../../src/directives/UploadContent/UploadContent';
 import AddSocNetClientModal from '../../src/pages/UsersSection/modals/AddSocNetClientModal/AddSocNetClientModal';
 import ChatDeviceSecurity from '../../src/pages/ChatPage/ChatDeviceSecurity/ChatDeviceSecurity';
+import EncryptedDirectChat from '../../src/pages/ChatPage/EncryptedDirectChat/EncryptedDirectChat';
+import browserE2eeHelper from 'geesome-libs-e2ee/src/browserE2eeHelper';
+import chatDeviceStore from '../../src/services/chatDeviceStore';
+import {getDirectConversationId} from '../../src/services/encryptedChat';
 
 const calls: any[] = [];
 const accounts = [
@@ -610,6 +614,22 @@ let blueskyReviewItems = [
   }
 ];
 let chatDevices: any[] = [];
+let encryptedChatRemoteDevice: any = null;
+let encryptedChatEvents: any[] = [];
+const encryptedChatOwnerId = 'owner-e2e';
+const encryptedChatRecipientOwnerId = 'owner-remote';
+const encryptedChatConversationId = getDirectConversationId([
+  encryptedChatOwnerId,
+  encryptedChatRecipientOwnerId
+]);
+const encryptedChatTransport = {
+  protocol: 'geesome-chat-delivery-v1',
+  syncProtocol: 'geesome-chat-sync-v1',
+  publicUrl: 'https://remote.example',
+  inboxUrl: 'https://remote.example/v1/chat/inbox',
+  syncUrl: 'https://remote.example/v1/chat/sync',
+  deviceDiscoveryTemplate: 'https://remote.example/v1/chat/public/users/{ownerId}/devices'
+};
 
 Vue.use(VueMaterial);
 Vue.component('upload-content', UploadContent);
@@ -671,6 +691,66 @@ Vue.prototype.$geesome = {
       device.revokedAt = '2026-07-29T12:00:00.000Z';
     }
     return device ? {...device} : null;
+  },
+  async getUser(ownerId) {
+    calls.push({type: 'getUser', ownerId});
+    if (ownerId !== encryptedChatRecipientOwnerId) {
+      return null;
+    }
+    return {
+      staticId: encryptedChatRecipientOwnerId,
+      publicKey: 'remote-static-identity-public-key',
+      name: 'bob',
+      title: 'Bob',
+      chatTransport: encryptedChatTransport
+    };
+  },
+  async getRemoteChatDevices(ownerId, chatTransport) {
+    calls.push({type: 'getRemoteChatDevices', ownerId, chatTransport});
+    return {list: encryptedChatRemoteDevice ? [encryptedChatRemoteDevice.publicBundle] : []};
+  },
+  async createEncryptedChatEvent(envelope, recipientEndpoints) {
+    calls.push({type: 'createEncryptedChatEvent', envelope, recipientEndpoints});
+    const event = {
+      messageId: envelope.messageId,
+      conversationId: envelope.conversationId,
+      sequence: String(encryptedChatEvents.length + 1),
+      senderOwnerId: envelope.sender.ownerId,
+      state: 'accepted_local',
+      envelope,
+      acceptedAt: new Date().toISOString()
+    };
+    encryptedChatEvents.push(event);
+    return {event, replay: false};
+  },
+  async getEncryptedChatEvents(conversationId, options) {
+    calls.push({type: 'getEncryptedChatEvents', conversationId, options});
+    const afterSequence = BigInt(options?.afterSequence || 0);
+    const limit = Number(options?.limit || 100);
+    const list = encryptedChatEvents
+      .filter(event =>
+        event.conversationId === conversationId &&
+        BigInt(event.sequence) > afterSequence
+      )
+      .slice(0, limit);
+    return {
+      list,
+      total: list.length
+    };
+  },
+  async getEncryptedChatEventDeliveries(messageId) {
+    calls.push({type: 'getEncryptedChatEventDeliveries', messageId});
+    return {
+      list: [{
+        messageId,
+        ownerId: encryptedChatRecipientOwnerId,
+        state: 'delivered'
+      }]
+    };
+  },
+  async setEncryptedChatReceipt(messageId, state) {
+    calls.push({type: 'setEncryptedChatReceipt', messageId, state});
+    return {messageId, state};
   },
   async adminIsHaveCorePermission(permissionName) {
     calls.push({type: 'adminIsHaveCorePermission', permissionName});
@@ -1314,13 +1394,21 @@ Vue.prototype.$geesome = {
 (window as any).__BLUESKY_ACCOUNT_E2E__ = {calls, blueskyCrossPostAccount};
 (window as any).__SOCIAL_MIGRATION_E2E__ = {calls, socialMigrationBlueskyPreview, socialMigrationActivityPubPreview};
 (window as any).__CHAT_SECURITY_E2E__ = {calls, get devices() { return chatDevices; }};
+(window as any).__ENCRYPTED_CHAT_E2E__ = {
+  calls,
+  get events() { return encryptedChatEvents; }
+};
 
 new Vue({
   el: '#app',
-  components: {PinServices, PostItem, NewPostControl, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, SocialMigrationPage, AddSocNetClientModal, ChatDeviceSecurity},
+  components: {PinServices, PostItem, NewPostControl, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, SocialMigrationPage, AddSocNetClientModal, ChatDeviceSecurity, EncryptedDirectChat},
   data() {
     return {
       currentPage: getCurrentPage(),
+      encryptedChatReady: false,
+      encryptedChatOwnerId,
+      encryptedChatRecipientOwnerId,
+      encryptedChatConversationId,
       postFixture,
       blueskyPostFixture,
       blueskyCrossPostAccount,
@@ -1331,7 +1419,18 @@ new Vue({
   created() {
     (window as any).addEventListener('hashchange', () => {
       this.currentPage = getCurrentPage();
+      this.prepareEncryptedChat();
     });
+    this.prepareEncryptedChat();
+  },
+  methods: {
+    async prepareEncryptedChat() {
+      if (this.currentPage !== 'encrypted-chat' || this.encryptedChatReady) {
+        return;
+      }
+      await setupEncryptedChatFixture();
+      this.encryptedChatReady = true;
+    }
   },
   template: `
     <main>
@@ -1360,6 +1459,10 @@ new Vue({
       <bluesky-sources-page v-else-if="currentPage === 'bluesky-sources'" />
       <social-migration-page v-else-if="currentPage === 'social-migration'" />
       <chat-device-security v-else-if="currentPage === 'chat-security'" owner-id="owner-e2e" />
+      <encrypted-direct-chat v-else-if="currentPage === 'encrypted-chat' && encryptedChatReady"
+                             :owner-id="encryptedChatOwnerId"
+                             :recipient-owner-id="encryptedChatRecipientOwnerId"
+                             :conversation-id="encryptedChatConversationId" />
       <activity-pub-remote-objects-page v-else-if="currentPage === 'activitypub'" :group="activityPubGroup" />
       <pin-services v-else-if="currentPage === 'group-pin-services'" :group-id="postFixtureGroup.id" />
       <pin-services v-else />
@@ -1401,10 +1504,52 @@ function getCurrentPage() {
   if (window.location.hash === '#chat-security') {
     return 'chat-security';
   }
+  if (window.location.hash === '#encrypted-chat') {
+    return 'encrypted-chat';
+  }
   if (window.location.hash === '#group-pin-services') {
     return 'group-pin-services';
   }
   return 'pin-services';
+}
+
+async function setupEncryptedChatFixture() {
+  await chatDeviceStore.clearOwner(encryptedChatOwnerId);
+  const localDevice = await browserE2eeHelper.generateDeviceKeys({
+    ownerId: encryptedChatOwnerId,
+    deviceId: 'browser-local',
+    createdAt: '2026-07-29T08:00:00.000Z'
+  });
+  encryptedChatRemoteDevice = await browserE2eeHelper.generateDeviceKeys({
+    ownerId: encryptedChatRecipientOwnerId,
+    deviceId: 'browser-remote',
+    createdAt: '2026-07-29T08:00:00.000Z'
+  });
+  await chatDeviceStore.save(localDevice);
+  chatDevices = [{
+    ...localDevice.publicBundle,
+    publicBundle: localDevice.publicBundle,
+    revokedAt: null
+  }];
+  const envelope = await browserE2eeHelper.encryptEnvelope(
+    'Encrypted hello from Bob',
+    [localDevice.publicBundle],
+    encryptedChatRemoteDevice,
+    {
+      conversationId: encryptedChatConversationId,
+      messageId: 'encrypted-message-incoming',
+      createdAt: '2026-07-29T08:05:00.000Z'
+    }
+  );
+  encryptedChatEvents = [{
+    messageId: envelope.messageId,
+    conversationId: envelope.conversationId,
+    sequence: '1',
+    senderOwnerId: encryptedChatRecipientOwnerId,
+    state: 'received_remote',
+    envelope,
+    acceptedAt: '2026-07-29T08:05:01.000Z'
+  }];
 }
 
 function prettySize(value) {
