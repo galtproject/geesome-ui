@@ -13,6 +13,7 @@ import BlueskySourcesPage from '../../src/pages/BlueskySourcesPage/BlueskySource
 import SocialMigrationPage from '../../src/pages/SocialMigrationPage/SocialMigrationPage';
 import UploadContent from '../../src/directives/UploadContent/UploadContent';
 import AddSocNetClientModal from '../../src/pages/UsersSection/modals/AddSocNetClientModal/AddSocNetClientModal';
+import ChatDeviceSecurity from '../../src/pages/ChatPage/ChatDeviceSecurity/ChatDeviceSecurity';
 
 const calls: any[] = [];
 const accounts = [
@@ -608,6 +609,7 @@ let blueskyReviewItems = [
     lastError: null
   }
 ];
+let chatDevices: any[] = [];
 
 Vue.use(VueMaterial);
 Vue.component('upload-content', UploadContent);
@@ -641,6 +643,35 @@ Vue.prototype.$store = {
 };
 
 Vue.prototype.$geesome = {
+  async getOwnChatDevices(options) {
+    calls.push({type: 'getOwnChatDevices', options});
+    const list = options && options.includeRevoked
+      ? chatDevices
+      : chatDevices.filter(device => !device.revokedAt);
+    return {list: list.map(device => ({...device})), total: list.length};
+  },
+  async registerChatDevice(publicBundle) {
+    calls.push({type: 'registerChatDevice', publicBundle});
+    const existingIndex = chatDevices.findIndex(device => device.keyId === publicBundle.keyId);
+    const device = {
+      ...publicBundle,
+      revokedAt: existingIndex >= 0 ? chatDevices[existingIndex].revokedAt : null
+    };
+    if (existingIndex >= 0) {
+      chatDevices.splice(existingIndex, 1, device);
+    } else {
+      chatDevices.push(device);
+    }
+    return {...device};
+  },
+  async revokeChatDevice(deviceId) {
+    calls.push({type: 'revokeChatDevice', deviceId});
+    const device = chatDevices.find(item => item.deviceId === deviceId);
+    if (device) {
+      device.revokedAt = '2026-07-29T12:00:00.000Z';
+    }
+    return device ? {...device} : null;
+  },
   async adminIsHaveCorePermission(permissionName) {
     calls.push({type: 'adminIsHaveCorePermission', permissionName});
     return permissionName === 'admin:all' || permissionName === 'admin:read';
@@ -1282,10 +1313,11 @@ Vue.prototype.$geesome = {
 (window as any).__BLUESKY_POST_ACTIONS_E2E__ = {calls, blueskyCrossPostAccount, blueskyPostFixture};
 (window as any).__BLUESKY_ACCOUNT_E2E__ = {calls, blueskyCrossPostAccount};
 (window as any).__SOCIAL_MIGRATION_E2E__ = {calls, socialMigrationBlueskyPreview, socialMigrationActivityPubPreview};
+(window as any).__CHAT_SECURITY_E2E__ = {calls, get devices() { return chatDevices; }};
 
 new Vue({
   el: '#app',
-  components: {PinServices, PostItem, NewPostControl, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, SocialMigrationPage, AddSocNetClientModal},
+  components: {PinServices, PostItem, NewPostControl, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, SocialMigrationPage, AddSocNetClientModal, ChatDeviceSecurity},
   data() {
     return {
       currentPage: getCurrentPage(),
@@ -1327,6 +1359,7 @@ new Vue({
       <activity-pub-sources-page v-else-if="currentPage === 'activitypub-sources'" />
       <bluesky-sources-page v-else-if="currentPage === 'bluesky-sources'" />
       <social-migration-page v-else-if="currentPage === 'social-migration'" />
+      <chat-device-security v-else-if="currentPage === 'chat-security'" owner-id="owner-e2e" />
       <activity-pub-remote-objects-page v-else-if="currentPage === 'activitypub'" :group="activityPubGroup" />
       <pin-services v-else-if="currentPage === 'group-pin-services'" :group-id="postFixtureGroup.id" />
       <pin-services v-else />
@@ -1364,6 +1397,9 @@ function getCurrentPage() {
   }
   if (window.location.hash === '#social-migration') {
     return 'social-migration';
+  }
+  if (window.location.hash === '#chat-security') {
+    return 'chat-security';
   }
   if (window.location.hash === '#group-pin-services') {
     return 'group-pin-services';

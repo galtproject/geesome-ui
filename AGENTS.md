@@ -15,7 +15,10 @@ These instructions are repo-specific. Follow them when working inside `/Users/mi
 
 ## Workflow
 
-- Use `yarn install` for dependency setup.
+- Use `yarn install --ignore-engines` for dependency setup. The package includes
+  node-only IPFS dependencies whose engine declarations can exceed the Node 18
+  runtime used by this legacy Parcel build, while shipped browser entry points
+  remain compatible.
 - Prefer `npm run build` as the verification command when changing shipped UI code or packaging behavior.
 - Treat service-layer changes as shared-contract changes and review `geesome-node` impact before calling the task complete.
 - Use the wrapper scripts for browser coverage instead of calling Playwright directly:

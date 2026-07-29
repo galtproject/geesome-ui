@@ -62,7 +62,8 @@ async function main() {
     'tests/e2e/bluesky-sources.spec.js',
     'tests/e2e/social-migration.spec.js',
     'tests/e2e/bluesky-post-actions.spec.js',
-    'tests/e2e/bluesky-account.spec.js'
+    'tests/e2e/bluesky-account.spec.js',
+    'tests/e2e/chat-device-security.spec.js'
   ] : [];
 
   console.log(`[geesome-ui:e2e] frontend port ${port}`);
