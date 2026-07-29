@@ -116,12 +116,17 @@ export default {
         }
         try {
           const content = await this.decryptMessageContent(event.envelope, senderBundle);
+          const attachments = excludeReleasedAttachments(
+            content.attachments,
+            event.releasedAttachmentStorageIds
+          );
           decrypted.push({
             messageId: event.messageId,
             sequence: event.sequence,
             createdAt: event.envelope.createdAt,
             text: content.text,
-            attachments: content.attachments,
+            attachments,
+            releasedAttachmentCount: content.attachments.length - attachments.length,
             isOwn: event.envelope.sender.ownerId === this.ownerId,
             deliveryLabel: event.envelope.sender.ownerId === this.ownerId
               ? await this.getDeliveryLabel(event.messageId)
@@ -364,6 +369,36 @@ export default {
         fileSaver.saveAs(attachment.blob, attachment.name);
       }
     },
+    async releaseMessageAttachment(message, attachment) {
+      if (attachment.releasing) {
+        return;
+      }
+      const confirmed = window.confirm(
+        'Remove this encrypted attachment from your local chat history? ' +
+        'This does not retract copies already delivered to other participants.'
+      );
+      if (!confirmed) {
+        return;
+      }
+      this.updateMessageAttachment(attachment, {releasing: true, error: ''});
+      try {
+        await this.$geesome.releaseEncryptedChatEventAttachment(
+          message.messageId,
+          attachment.storageId
+        );
+        if (attachment.objectUrl) {
+          URL.revokeObjectURL(attachment.objectUrl);
+        }
+        message.attachments = message.attachments.filter(item => item !== attachment);
+        message.releasedAttachmentCount = (message.releasedAttachmentCount || 0) + 1;
+        this.messages = [...this.messages];
+      } catch (error) {
+        this.updateMessageAttachment(attachment, {
+          releasing: false,
+          error: getErrorMessage(error, 'Attachment could not be removed.')
+        });
+      }
+    },
     updateMessageAttachment(target, changes) {
       Object.assign(target, changes);
       this.messages = [...this.messages];
@@ -473,6 +508,11 @@ export default {
     formatDate(value) {
       return value ? new Date(value).toLocaleString() : '';
     },
+    getReleasedAttachmentLabel(message) {
+      return message.releasedAttachmentCount === 1
+        ? 'Attachment removed from this history'
+        : `${message.releasedAttachmentCount} attachments removed from this history`;
+    },
     formatAttachmentSize,
     isPreviewImage
   },
@@ -540,6 +580,11 @@ function getErrorMessage(error, fallback) {
     error?.response?.data?.error ||
     error?.message ||
     fallback;
+}
+
+function excludeReleasedAttachments(attachments, releasedStorageIds) {
+  const released = new Set(releasedStorageIds || []);
+  return attachments.filter(attachment => !released.has(attachment.storageId));
 }
 
 function compareSequences(left, right) {

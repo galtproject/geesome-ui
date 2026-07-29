@@ -105,6 +105,7 @@ module.exports = `
               <md-button v-if="attachment.state === 'encrypted' || attachment.state === 'failed'"
                          class="md-icon-button"
                          @click="decryptMessageAttachment(attachment)"
+                         :disabled="attachment.releasing"
                          :aria-label="'Decrypt attachment ' + attachment.name"
                          title="Decrypt attachment">
                 <md-icon>lock_open</md-icon>
@@ -115,13 +116,29 @@ module.exports = `
               <md-button v-else-if="attachment.state === 'ready'"
                          class="md-icon-button"
                          @click="downloadMessageAttachment(attachment)"
+                         :disabled="attachment.releasing"
                          :aria-label="'Download attachment ' + attachment.name"
                          title="Download">
                 <md-icon>download</md-icon>
               </md-button>
+              <md-button v-if="!attachment.releasing"
+                         class="md-icon-button"
+                         @click="releaseMessageAttachment(message, attachment)"
+                         :aria-label="'Remove attachment ' + attachment.name + ' from this history'"
+                         title="Remove from this history">
+                <md-icon>delete_outline</md-icon>
+              </md-button>
+              <md-progress-spinner v-else
+                                   :md-diameter="24" :md-stroke="3"
+                                   md-mode="indeterminate"></md-progress-spinner>
             </div>
             <p v-if="attachment.error" role="alert">{{attachment.error}}</p>
           </section>
+        </div>
+        <div v-if="message.releasedAttachmentCount"
+             class="encrypted-direct-chat-attachment-released">
+          <md-icon>delete_outline</md-icon>
+          <span>{{getReleasedAttachmentLabel(message)}}</span>
         </div>
         <footer>
           <time :datetime="message.createdAt">{{formatDate(message.createdAt)}}</time>
