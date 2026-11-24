@@ -1408,3 +1408,19 @@ a.back {
   }
 }
 @import "adaptive";
+
+.desktop-client-page {
+  max-width: 800px; margin: 24px auto; padding: 24px; color: #cad0da; line-height: 1.65;
+  h1, h2 { color: #fff; font-weight: 500; line-height: 1.35; }
+  h1 { font-size: 28px; } h2 { font-size: 20px; margin-top: 28px; }
+  p { margin: 16px 0; } code, .desktop-client-hash { overflow-wrap: anywhere; }
+  a { color: #bbaaff; text-decoration: underline; }
+  .desktop-client-download { display: inline-block; background: #6650af; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; }
+  button { background: #34303e; color: #fff; border: 1px solid #797080; padding: 10px 16px; border-radius: 6px; cursor: pointer; line-height: 1.5; }
+  .desktop-client-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; margin: 24px 0; }
+  textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 12px; background: #24212b; color: #e2e5ec; line-height: 1.65; border: 1px solid #797080; border-radius: 6px; }
+  li { margin: 12px 0; } [role=alert] { color: #ffb2b2; }
+  @media (max-width: 600px) { padding: 18px 14px; margin: 0; h1 { font-size: 24px; } }
+}
+.md-theme-default .desktop-client-page a:not(.md-button) { color: #c4b5fd; }
+.md-theme-default .desktop-client-page a.desktop-client-download:not(.md-button) { color: #fff; text-decoration: none; }

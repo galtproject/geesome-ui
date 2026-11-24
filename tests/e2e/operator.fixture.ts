@@ -1,4 +1,5 @@
 import Vue from 'vue';
+import DesktopClientPage from '../../src/pages/DesktopClientPage/DesktopClientPage';
 import VueMaterial from 'vue-material';
 import 'vue-material/dist/vue-material.min.css';
 import '../../src/styles/main.scss';
@@ -1472,7 +1473,7 @@ Vue.prototype.$geesome = {
 
 new Vue({
   el: '#app',
-  components: {PinServices, PostItem, NewPostControl, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, SocialMigrationPage, AddSocNetClientModal, ChatDeviceSecurity, EncryptedDirectChat},
+  components: {DesktopClientPage, PinServices, PostItem, NewPostControl, StorageSpacePage, ActivityPubRemoteObjectsPage, ActivityPubSourcesPage, BlueskySourcesPage, SocialMigrationPage, AddSocNetClientModal, ChatDeviceSecurity, EncryptedDirectChat},
   data() {
     return {
       currentPage: getCurrentPage(),
@@ -1505,7 +1506,8 @@ new Vue({
   },
   template: `
     <main>
-      <section v-if="currentPage === 'post-html-safety'" aria-label="Post HTML safety fixture">
+      <desktop-client-page v-if="currentPage === 'desktop-client'" />
+      <section v-else-if="currentPage === 'post-html-safety'" aria-label="Post HTML safety fixture">
         <h1>Post HTML safety</h1>
         <post-item :value="postFixture" :group="postFixtureGroup" />
       </section>
@@ -1542,6 +1544,7 @@ new Vue({
 });
 
 function getCurrentPage() {
+  if (window.location.hash === '#desktop-client') { return 'desktop-client'; }
   if (window.location.hash === '#storage-space') {
     return 'storage-space';
   }
