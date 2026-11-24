@@ -6,6 +6,10 @@ module.exports = `
   <!--</md-toolbar>-->
 
   <md-list>
+    <md-list-item :to="{name: 'desktop-client'}" data-testid="desktop-client-menu">
+      <md-icon class="fas fa-download"></md-icon>
+      <span class="md-list-item-text" v-locale="localeKey + '.desktop_client'"></span>
+    </md-list-item>
     <md-list-item :to="'/'">
       <md-icon class="fas fa-home"></md-icon>
       <span class="md-list-item-text" v-locale="localeKey + '.home'"></span>

@@ -7,6 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale = 1.0, maximum-scale=1.0, user-scalable=no">
 
   <title>Geesome UI</title>
+  <meta name="description" content="GeeSome node web interface. For the native Windows GeeSome Client, open Download desktop client and install the verified EXE; a browser web app/PWA is not the local client.">
+  <meta name="geesome:discovery" content="/.well-known/geesome">
+  <meta name="geesome:discovery-fallback" content="/api/.well-known/geesome">
   <script>
     // if(window.location.protocol != 'https:' && location.href.indexOf('http://localhost') !== 0 && location.href.indexOf('http://127.0.0.1') !== 0) {
     //     location.href = location.href.replace("http://", "https://");
@@ -126,6 +129,10 @@
 </head>
 
 <body onload="checkScriptLoaded()">
+  <noscript>
+    <p><a href="#/desktop-client">Download desktop client</a>: install the native Windows x64 GeeSome Client EXE, not this website as a Firefox web app or PWA.</p>
+    <p>Installation agents: read <code>/.well-known/geesome</code>, or <code>/api/.well-known/geesome</code> if the first returns 404. Follow capabilities.clientReleases.installGuideUrl and stableUrl. Verify the installer before executing it. Success requires the local geesome-client health endpoint at http://localhost:7347/api/health, the local UI, login task and Windows Installed Apps entry; opening the remote site is insufficient.</p>
+  </noscript>
   <div id="app">
     <div class="sk-cube-grid" v-if="false">
       <div class="sk-cube sk-cube1"></div>

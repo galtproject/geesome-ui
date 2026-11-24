@@ -7,7 +7,8 @@ const repoRoot = path.resolve(__dirname, '../..');
 function parseArgs(argv) {
   return {
     screens: argv.includes('--screens'),
-    debug: argv.includes('--debug')
+    debug: argv.includes('--debug'),
+    desktopClient: argv.includes('--desktop-client')
   };
 }
 
@@ -52,7 +53,8 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const port = await findFreePort(Number(process.env.PLAYWRIGHT_TEST_FRONTEND_PORT || 4384));
   const playwrightBin = path.join(repoRoot, 'node_modules/.bin/playwright');
-  const specArgs = args.screens ? [
+  const specArgs = args.desktopClient ? ['tests/e2e/desktop-client.spec.js'] : args.screens ? [
+    'tests/e2e/desktop-client.spec.js',
     'tests/e2e/pin-services.spec.js',
     'tests/e2e/new-post-rich-text.spec.js',
     'tests/e2e/post-html-safety.spec.js',

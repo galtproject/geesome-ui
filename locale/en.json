@@ -5,6 +5,7 @@
     "main_menu": {
       "title": "Menu",
       "home": "Home",
+      "desktop_client": "Download desktop client",
       "profile": "Profile",
       "chat": "Chat",
       "file_explorer": "Files explorer",

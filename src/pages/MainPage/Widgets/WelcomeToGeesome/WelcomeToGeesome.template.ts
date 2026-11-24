@@ -7,6 +7,7 @@ module.exports = `
 
     <md-card-content>
       <p>Here you can publish content, make public pages (like in social networks), invite and share to friends!</p>
+      <p><router-link :to="{name: 'desktop-client'}" data-testid="desktop-client-home">Download desktop client</router-link> · Windows x64 installer for local social publishing.</p>
     </md-card-content>
 
     <md-card-content>

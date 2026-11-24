@@ -39,11 +39,14 @@ import ActivityPubSourcesPage from "./pages/ActivityPubSourcesPage/ActivityPubSo
 import BlueskySourcesPage from "./pages/BlueskySourcesPage/BlueskySourcesPage";
 import SocialMigrationPage from "./pages/SocialMigrationPage/SocialMigrationPage";
 
+import DesktopClientPage from "./pages/DesktopClientPage/DesktopClientPage";
+
 Vue.use(Router);
 
 export default new Router({
   //mode: 'history',
   routes: [
+    {path: "/desktop-client", name: "desktop-client", component: DesktopClientPage},
     {
       path: '',
       name: 'main-page',
